@@ -6,7 +6,6 @@ func TestExpandedSensitiveDetectors(t *testing.T) {
 	text := `
 Email: maria.teste@example.com
 RG: 12.345.678-9
-CEP: 80000-000
 Telefone: (41) 99999-0000
 Chave PIX: pix-chave-12345
 Agência: 1234, Conta: 123456-7
@@ -19,7 +18,6 @@ Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456
 	want := map[string]bool{
 		"EMAIL_ADDRESS": false,
 		"RG_BR":         false,
-		"CEP_BR":        false,
 		"PHONE_BR":      false,
 		"PIX_KEY":       false,
 		"BANK_ACCOUNT":  false,

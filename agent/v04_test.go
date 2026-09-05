@@ -12,6 +12,19 @@ import (
 	"time"
 )
 
+func TestMain(m *testing.M) {
+	if os.Getenv("BSC_DLP_FAKE_TESSERACT") == "1" {
+		args := strings.Join(os.Args[1:], " ")
+		if strings.Contains(args, "por+eng") {
+			_, _ = os.Stderr.WriteString("missing por language\\n")
+			os.Exit(1)
+		}
+		_, _ = os.Stdout.WriteString("CPF 529.982.247-25\\n")
+		os.Exit(0)
+	}
+	os.Exit(m.Run())
+}
+
 func TestDetectCNPJAndCard(t *testing.T) {
 	text := "CNPJ 04.252.011/0001-10 cartão 4111 1111 1111 1111"
 	detections := detectSensitive(text)
@@ -142,16 +155,11 @@ func TestDownloadImageUsesOCRWithLanguageFallback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fake := filepath.Join(dir, "fake-tesseract")
-	script := `#!/bin/sh
-case "$*" in
-  *por+eng*) echo "missing por language" >&2; exit 1 ;;
-  *) echo "CPF 529.982.247-25" ;;
-esac
-`
-	if err := os.WriteFile(fake, []byte(script), 0700); err != nil {
+	fake, err := os.Executable()
+	if err != nil {
 		t.Fatal(err)
 	}
+	t.Setenv("BSC_DLP_FAKE_TESSERACT", "1")
 	t.Setenv("BSC_DLP_TESSERACT", fake)
 	t.Setenv("BSC_DLP_OCR_LANGS", "por+eng,eng")
 
@@ -175,13 +183,11 @@ func TestRecentDirectoryScanCatchesDownloadedImage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fake := filepath.Join(dir, "fake-tesseract")
-	script := `#!/bin/sh
-echo "CPF 529.982.247-25"
-`
-	if err := os.WriteFile(fake, []byte(script), 0700); err != nil {
+	fake, err := os.Executable()
+	if err != nil {
 		t.Fatal(err)
 	}
+	t.Setenv("BSC_DLP_FAKE_TESSERACT", "1")
 	t.Setenv("BSC_DLP_TESSERACT", fake)
 	t.Setenv("BSC_DLP_OCR_LANGS", "eng")
 

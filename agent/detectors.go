@@ -35,7 +35,6 @@ var bearerRegex = regexp.MustCompile(`(?i)\bbearer\s+([A-Za-z0-9_\-./+=]{12,512}
 // Context-based Brazilian PII patterns intentionally require a nearby label to
 // reduce false positives in logs and arbitrary numeric content.
 var rgContextRegex = regexp.MustCompile(`(?i)\bRG\s*[:#-]?\s*([0-9]{1,2}[.]?[0-9]{3}[.]?[0-9]{3}[-]?[0-9Xx])`)
-var cepContextRegex = regexp.MustCompile(`(?i)\bCEP\s*[:#-]?\s*([0-9]{5}-?[0-9]{3})`)
 var phoneContextRegex = regexp.MustCompile(`(?i)(?:telefone|fone|celular|mobile|whatsapp|contato)\s*[:#-]?\s*((?:\+?55\s*)?\(?[1-9][0-9]\)?[\s.-]?(?:9?[0-9]{4})[\s.-]?[0-9]{4})`)
 var pixContextRegex = regexp.MustCompile(`(?i)(?:chave\s+pix|pix)\s*[:#=-]?\s*([A-Za-z0-9@._+\-]{5,140})`)
 var bankContextRegex = regexp.MustCompile(`(?i)(?:ag[eê]ncia\s*[:#-]?\s*[0-9]{1,6}[-0-9]*\s*(?:[,;/]|e)?\s*)?conta\s*[:#-]?\s*([0-9]{2,20}[-]?[0-9Xx]?)`)
@@ -143,9 +142,6 @@ func detectSensitive(text string) []Detection {
 	}
 	for _, value := range captureMatches(rgContextRegex, text, 1, 100) {
 		add("RG_BR", value, "rg_context")
-	}
-	for _, value := range captureMatches(cepContextRegex, text, 1, 100) {
-		add("CEP_BR", value, "cep_context")
 	}
 	for _, value := range captureMatches(phoneContextRegex, text, 1, 100) {
 		add("PHONE_BR", value, "phone_context")

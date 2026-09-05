@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 import csv
 import html
 import io
+import json
 import hashlib
 import hmac
 import os
@@ -60,6 +61,28 @@ SESSION_HOURS = 12
 
 def now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _ensure_utc(value: Optional[datetime]) -> Optional[datetime]:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def utc_iso(value: Optional[datetime]) -> Optional[str]:
+    value = _ensure_utc(value)
+    if value is None:
+        return None
+    return value.isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def host_iso(value: Optional[datetime]) -> Optional[str]:
+    value = _ensure_utc(value)
+    if value is None:
+        return None
+    return value.astimezone().isoformat(timespec="seconds")
 
 
 def endpoint_is_online(last_seen) -> bool:
@@ -168,7 +191,14 @@ class Event(Base):
     blocked = Column(Boolean, default=False)
     risk_score = Column(Integer, default=0)
     incident_type = Column(String(128))
+    incident_key = Column(String(64), index=True)
     document_type = Column(String(64))
+    detection_count = Column(Integer, default=1)
+    classification_count = Column(Integer, default=1)
+    context_tags = Column(Text)
+    sensitive_filename = Column(Boolean, default=False)
+    destination_trust = Column(String(32))
+    risk_reasons = Column(Text)
 
 
 Base.metadata.create_all(engine)
@@ -183,7 +213,14 @@ def migrate_sqlite() -> None:
     additions = {
         "risk_score": "INTEGER DEFAULT 0",
         "incident_type": "VARCHAR(128)",
+        "incident_key": "VARCHAR(64)",
         "document_type": "VARCHAR(64)",
+        "detection_count": "INTEGER DEFAULT 1",
+        "classification_count": "INTEGER DEFAULT 1",
+        "context_tags": "TEXT",
+        "sensitive_filename": "BOOLEAN DEFAULT 0",
+        "destination_trust": "VARCHAR(32)",
+        "risk_reasons": "TEXT",
     }
     with engine.begin() as conn:
         for column, ddl in additions.items():
@@ -207,6 +244,13 @@ def seed_default_policies() -> None:
         ("Secrets - Removable Media Block", "SECRET", "CRITICAL", "BLOCK", "removable", 10),
         ("Credentials - Removable Media Block", "CREDENTIAL", "CRITICAL", "BLOCK", "removable", 10),
         ("Credentials - Download Alert", "CREDENTIAL", "HIGH", "ALERT", "download", 30),
+        ("CPF - Messaging Alert", "CPF", "HIGH", "ALERT", "messaging", 25),
+        ("CNPJ - Messaging Alert", "CNPJ", "HIGH", "ALERT", "messaging", 25),
+        ("Bank Data - Messaging Alert", "BANK_ACCOUNT", "HIGH", "ALERT", "messaging", 20),
+        ("PIX - Messaging Alert", "PIX_KEY", "HIGH", "ALERT", "messaging", 20),
+        ("Card Data - Messaging Block", "CREDIT_CARD", "CRITICAL", "BLOCK", "messaging", 5),
+        ("Secrets - Messaging Block", "SECRET", "CRITICAL", "BLOCK", "messaging", 5),
+        ("Credentials - Messaging Block", "CREDENTIAL", "CRITICAL", "BLOCK", "messaging", 5),
     ]
     db = SessionLocal()
     try:
@@ -294,8 +338,17 @@ class EventIn(BaseModel):
     evidence: Optional[str] = None
     blocked: bool = False
     document_type: Optional[str] = None
+    detection_count: int = Field(default=1, ge=1, le=10000)
+    classification_count: int = Field(default=1, ge=1, le=256)
+    context_tags: list[str] = Field(default_factory=list)
+    sensitive_filename: bool = False
+    destination_trust: Optional[str] = None
 
 
+
+
+class RiskPreviewIn(EventIn):
+    pass
 
 
 class DetectionRuleIn(BaseModel):
@@ -470,49 +523,136 @@ def consume_enrollment_invite(presented: str) -> bool:
         db.close()
 
 
-def risk_for_event(body: EventIn, recent_count: int) -> tuple[int, str]:
-    severity_points = {"LOW": 8, "MEDIUM": 18, "HIGH": 32, "CRITICAL": 48}
-    score = severity_points.get(body.severity.upper(), 18)
+def risk_for_event(
+    body: EventIn,
+    recent_count: int,
+    recent_object_count: int = 0,
+) -> tuple[int, str, list[str]]:
+    reasons: list[str] = []
+    severity = body.severity.upper()
+    score = {"LOW": 5, "MEDIUM": 15, "HIGH": 30, "CRITICAL": 45}.get(severity, 15)
+    reasons.append(f"severity:{severity}")
+
     channel = body.channel.lower()
-    channel_points = {
-        "removable": 30,
-        "screenshot": 22,
-        "download": 12,
-        "email": 24,
-        "ai": 28,
-        "clipboard": 20,
-        "filesystem": 4,
-    }
-    score += channel_points.get(channel, 8)
-    if body.action.upper() == "BLOCK":
-        score += 14
-    elif body.action.upper() == "ALERT":
-        score += 8
-    if body.blocked:
+    score += {
+        "removable": 24,
+        "screenshot": 18,
+        "download": 10,
+        "messaging": 24,
+        "email": 22,
+        "ai": 26,
+        "clipboard": 16,
+        "filesystem": 3,
+    }.get(channel, 6)
+    reasons.append(f"channel:{channel}")
+
+    action = body.action.upper()
+    if action in {"BLOCK", "QUARANTINE"}:
+        score += 12
+        reasons.append(f"action:{action}")
+    elif action == "ALERT":
         score += 6
-    score += min(recent_count * 4, 20)
+        reasons.append("action:ALERT")
+    if body.blocked:
+        score += 3
+        reasons.append("enforcement:blocked")
+
+    detections = max(int(body.detection_count or 1), 1)
+    if detections >= 50:
+        score += 20
+        reasons.append("volume:50+")
+    elif detections >= 10:
+        score += 12
+        reasons.append("volume:10+")
+    elif detections >= 3:
+        score += 5
+        reasons.append("volume:3+")
+
+    classes = max(int(body.classification_count or 1), 1)
+    if classes >= 3:
+        score += 12
+        reasons.append("co_occurrence:3+")
+    elif classes >= 2:
+        score += 7
+        reasons.append("co_occurrence:2+")
+
+    tags = {str(tag).strip().lower() for tag in body.context_tags if str(tag).strip()}
+    if body.sensitive_filename or "sensitive_filename" in tags:
+        score += 8
+        reasons.append("sensitive_filename")
+    if "high_value_extension" in tags:
+        score += 6
+        reasons.append("high_value_extension")
+
+    trust = (body.destination_trust or "unknown").strip().lower()
+    if trust in {"external", "untrusted"}:
+        score += 12
+        reasons.append(f"destination:{trust}")
+    elif trust in {"internal", "trusted", "local"}:
+        reasons.append(f"destination:{trust}")
+
+    if recent_count >= 15:
+        score += 15
+        reasons.append("burst:15+")
+    elif recent_count >= 6:
+        score += 10
+        reasons.append("burst:6+")
+    elif recent_count >= 3:
+        score += 5
+        reasons.append("burst:3+")
+
+    if recent_object_count >= 10:
+        score += 10
+        reasons.append("objects:10+")
+    elif recent_object_count >= 3:
+        score += 5
+        reasons.append("objects:3+")
+
     score = min(score, 100)
 
-    if channel == "removable":
+    if channel == "removable" and detections >= 10:
+        incident = "Bulk sensitive-data transfer to removable media"
+    elif channel == "removable":
         incident = "Possible removable-media exfiltration"
+    elif channel == "messaging":
+        incident = "Possible sensitive-data exposure via messaging"
     elif channel == "screenshot":
         incident = "Sensitive screenshot activity"
+    elif channel == "download" and classes >= 2:
+        incident = "Multi-class sensitive download activity"
     elif channel == "download":
         incident = "Sensitive download activity"
     elif channel == "email":
         incident = "Possible external email exfiltration"
     elif channel == "ai":
         incident = "Possible AI data exposure"
-    elif recent_count >= 4:
+    elif detections >= 10:
+        incident = "Bulk sensitive-data activity"
+    elif classes >= 2:
+        incident = "Multi-class sensitive data activity"
+    elif recent_count >= 6:
         incident = "Unusual sensitive-data burst"
     else:
         incident = "Sensitive data activity"
-    return score, incident
 
+    return score, incident, reasons
+
+
+def incident_key_for_event(body: EventIn, incident_type: str, event_time: datetime) -> str:
+    bucket = int(event_time.timestamp()) // 300
+    basis = "|".join([
+        body.endpoint_id,
+        body.username or "",
+        body.channel.lower(),
+        body.destination or "",
+        incident_type,
+        str(bucket),
+    ])
+    return hashlib.sha256(basis.encode("utf-8")).hexdigest()[:24]
 
 app = FastAPI(
     title="BSC DLP API",
-    version="0.5.4",
+    version="0.6.2",
     description="BSC DLP Community Edition - admin console, risk engine and endpoint enforcement",
     docs_url=None,
     redoc_url=None,
@@ -549,8 +689,10 @@ def health():
     return {
         "status": "ok",
         "engine": "BSC DLP",
-        "version": "0.5.4",
+        "version": "0.6.2",
         "database": "sqlite",
+        "server_time_utc": utc_iso(now()),
+        "server_time_local": datetime.now().astimezone().isoformat(timespec="seconds"),
     }
 
 
@@ -733,7 +875,7 @@ def endpoints(request: Request):
                 "os": row.os,
                 "agent_version": row.agent_version,
                 "username": row.username,
-                "last_seen": row.last_seen,
+                "last_seen": utc_iso(row.last_seen),
                 "active": endpoint_is_online(row.last_seen),
                 "risk_score": risk,
             })
@@ -893,7 +1035,7 @@ def serialize_detection_rule(rule: DetectionRule) -> dict:
         "pattern": rule.pattern,
         "description": rule.description,
         "enabled": bool(rule.enabled),
-        "created_at": rule.created_at,
+        "created_at": utc_iso(rule.created_at),
     }
 
 
@@ -988,6 +1130,18 @@ def agent_detection_rules(authorization: Optional[str] = Header(default=None)):
         db.close()
 
 
+@app.post("/api/v1/admin/risk-preview")
+def risk_preview(body: RiskPreviewIn, request: Request):
+    require_admin(request)
+    score, incident_type, reasons = risk_for_event(body, 0, 0)
+    return {
+        "risk_score": score,
+        "incident_type": incident_type,
+        "risk_reasons": reasons,
+        "note": "Preview only. No event was stored and no enforcement action was executed.",
+    }
+
+
 @app.post("/api/v1/events")
 def create_event(body: EventIn, authorization: Optional[str] = Header(default=None)):
     authenticate_agent(authorization, endpoint_id=body.endpoint_id)
@@ -995,15 +1149,24 @@ def create_event(body: EventIn, authorization: Optional[str] = Header(default=No
     try:
         if db.query(Event).filter(Event.event_id == body.event_id).first():
             raise HTTPException(status_code=409, detail="event_id already exists")
-        burst_since = now() - timedelta(minutes=5)
-        recent_count = db.query(Event).filter(
+        event_time = now()
+        burst_since = event_time - timedelta(minutes=5)
+        recent_rows = db.query(Event).filter(
             Event.endpoint_id == body.endpoint_id,
             Event.timestamp >= burst_since,
-        ).count()
-        risk_score, incident_type = risk_for_event(body, recent_count)
+        ).all()
+        recent_count = len(recent_rows)
+        recent_object_count = len({
+            row.object_hash or row.object_path or row.event_id
+            for row in recent_rows
+        })
+        risk_score, incident_type, risk_reasons = risk_for_event(
+            body, recent_count, recent_object_count
+        )
+        incident_key = incident_key_for_event(body, incident_type, event_time)
         event = Event(
             event_id=body.event_id,
-            timestamp=now(),
+            timestamp=event_time,
             endpoint_id=body.endpoint_id,
             hostname=body.hostname,
             username=body.username,
@@ -1022,7 +1185,14 @@ def create_event(body: EventIn, authorization: Optional[str] = Header(default=No
             blocked=body.blocked,
             risk_score=risk_score,
             incident_type=incident_type,
+            incident_key=incident_key,
             document_type=(body.document_type or "").lower() or None,
+            detection_count=body.detection_count,
+            classification_count=body.classification_count,
+            context_tags=json.dumps(body.context_tags[:32], ensure_ascii=False),
+            sensitive_filename=body.sensitive_filename,
+            destination_trust=(body.destination_trust or "unknown").lower(),
+            risk_reasons=json.dumps(risk_reasons, ensure_ascii=False),
         )
         db.add(event)
         db.commit()
@@ -1033,16 +1203,30 @@ def create_event(body: EventIn, authorization: Optional[str] = Header(default=No
             "event_id": event.event_id,
             "risk_score": risk_score,
             "incident_type": incident_type,
+            "incident_key": incident_key,
+            "risk_reasons": risk_reasons,
         }
     finally:
         db.close()
+
+
+def _json_list(value) -> list:
+    if not value:
+        return []
+    if isinstance(value, list):
+        return value
+    try:
+        parsed = json.loads(value)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return []
+    return parsed if isinstance(parsed, list) else []
 
 
 def serialize_event(r: Event) -> dict:
     return {
         "id": r.id,
         "event_id": r.event_id,
-        "timestamp": r.timestamp,
+        "timestamp": utc_iso(r.timestamp),
         "endpoint_id": r.endpoint_id,
         "hostname": r.hostname,
         "username": r.username,
@@ -1061,7 +1245,14 @@ def serialize_event(r: Event) -> dict:
         "blocked": r.blocked,
         "risk_score": int(r.risk_score or 0),
         "incident_type": r.incident_type,
+        "incident_key": r.incident_key,
         "document_type": r.document_type,
+        "detection_count": int(r.detection_count or 1),
+        "classification_count": int(r.classification_count or 1),
+        "context_tags": _json_list(r.context_tags),
+        "sensitive_filename": bool(r.sensitive_filename),
+        "destination_trust": r.destination_trust or "unknown",
+        "risk_reasons": _json_list(r.risk_reasons),
     }
 
 
@@ -1207,6 +1398,99 @@ def query_incidents(
                              severity=severity, action=action, blocked=blocked, risk_min=max(risk_min, 40),
                              start=start, end=end, q=q)
         return _paged_payload(query, page, page_size, incident_only=True)
+    finally:
+        db.close()
+
+
+@app.get("/api/v1/incidents/correlated")
+def correlated_incidents(
+    request: Request,
+    page: int = 1,
+    page_size: int = 25,
+    endpoint: Optional[str] = None,
+    classification: Optional[str] = None,
+    channel: Optional[str] = None,
+    severity: Optional[str] = None,
+    action: Optional[str] = None,
+    blocked: Optional[str] = None,
+    risk_min: int = 40,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    q: Optional[str] = None,
+):
+    require_admin(request)
+    db = SessionLocal()
+    try:
+        query = _event_query(
+            db,
+            incident_only=True,
+            endpoint=endpoint,
+            classification=classification,
+            channel=channel,
+            severity=severity,
+            action=action,
+            blocked=blocked,
+            risk_min=max(risk_min, 40),
+            start=start,
+            end=end,
+            q=q,
+        )
+        rows = query.order_by(Event.timestamp.desc()).limit(10000).all()
+        groups = {}
+        for row in rows:
+            key = row.incident_key or f"event:{row.id}"
+            group = groups.setdefault(key, {
+                "incident_key": key,
+                "incident_type": row.incident_type,
+                "endpoint_id": row.endpoint_id,
+                "hostname": row.hostname,
+                "username": row.username,
+                "channel": row.channel,
+                "destination": row.destination,
+                "event_count": 0,
+                "max_risk": 0,
+                "first_seen": row.timestamp,
+                "last_seen": row.timestamp,
+                "blocked": False,
+                "classifications": set(),
+                "objects": set(),
+                "risk_reasons": set(),
+            })
+            group["event_count"] += 1
+            group["max_risk"] = max(group["max_risk"], int(row.risk_score or 0))
+            group["first_seen"] = min(group["first_seen"], row.timestamp)
+            group["last_seen"] = max(group["last_seen"], row.timestamp)
+            group["blocked"] = group["blocked"] or bool(row.blocked)
+            if row.classification:
+                group["classifications"].add(row.classification)
+            group["objects"].add(row.object_hash or row.object_path or row.event_id)
+            group["risk_reasons"].update(_json_list(row.risk_reasons))
+
+        items = []
+        for group in groups.values():
+            group["classifications"] = sorted(group["classifications"])
+            group["object_count"] = len(group.pop("objects"))
+            group["risk_reasons"] = sorted(group["risk_reasons"])
+            items.append(group)
+
+        items.sort(key=lambda item: (item["max_risk"], item["last_seen"]), reverse=True)
+        page = max(int(page or 1), 1)
+        page_size = min(max(int(page_size or 25), 10), 100)
+        total = len(items)
+        pages = max((total + page_size - 1) // page_size, 1)
+        page = min(page, pages)
+        offset = (page - 1) * page_size
+        page_items = items[offset:offset + page_size]
+        for item in page_items:
+            item["first_seen"] = utc_iso(item["first_seen"])
+            item["last_seen"] = utc_iso(item["last_seen"])
+        return {
+            "items": page_items,
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+            "pages": pages,
+        }
     finally:
         db.close()
 
@@ -1478,7 +1762,7 @@ def _build_report_pdf(*, rows: list[Event], metrics: dict, admin: str, start: Op
     ]))
     story.extend([header, Spacer(1, 4 * mm)])
 
-    generated_at = now().astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
+    generated_at = datetime.now().astimezone().strftime("%Y-%m-%d %H:%M:%S %Z")
     info = Table([
         [Paragraph(rt("period"), cell_bold_style), Paragraph(_pdf_text(_report_period_label(start, end, lang)), body_style),
          Paragraph(rt("generated"), cell_bold_style), Paragraph(_pdf_text(generated_at), body_style),
@@ -1567,7 +1851,7 @@ def _build_report_pdf(*, rows: list[Event], metrics: dict, admin: str, start: Op
         Paragraph(rt("object"), header_cell_style),
     ]]
     for row in detail_rows:
-        timestamp = row.timestamp.isoformat(timespec="seconds") if row.timestamp else ""
+        timestamp = host_iso(row.timestamp) or ""
         event_data.append([
             Paragraph(_pdf_text(timestamp, 32), cell_style),
             Paragraph(str(int(row.risk_score or 0)), cell_style),
@@ -1658,7 +1942,7 @@ def report_csv(
                          _report_t(lang, "action"), _report_t(lang, "blocked"), _report_t(lang, "document"), _report_t(lang, "object"), "policy", "masked_value", "evidence"])
         for r in rows:
             writer.writerow([
-                r.timestamp.isoformat() if r.timestamp else "", int(r.risk_score or 0), _csv_safe(r.endpoint_id), _csv_safe(r.hostname),
+                host_iso(r.timestamp) or "", int(r.risk_score or 0), _csv_safe(r.endpoint_id), _csv_safe(r.hostname),
                 _csv_safe(r.username), _csv_safe(r.classification), _csv_safe(r.channel), _csv_safe(r.severity), _csv_safe(r.action),
                 _report_t(lang, "yes") if r.blocked else _report_t(lang, "no"), _csv_safe(r.document_type), _csv_safe(r.object_path), _csv_safe(r.policy),
                 _csv_safe(r.masked_value), _csv_safe(r.evidence),
@@ -1843,9 +2127,47 @@ def capabilities(request: Request):
     return {
         "documents": ["PDF", "DOCX", "XLSX", "PPTX", "TXT", "CSV", "JSON", "XML", "LOG", "MD"],
         "ocr": ["PNG", "JPG", "JPEG", "TIFF", "BMP", "WEBP", "scanned PDF (when Tesseract + pdftoppm are available)"],
-        "channels": ["filesystem", "download", "screenshot", "removable"],
+        "channels": ["filesystem", "download", "screenshot", "removable", "messaging"],
+        "channel_status": {
+            "active": ["filesystem", "download", "screenshot", "removable"],
+            "active_windows": ["messaging"],
+            "foundation": ["clipboard", "email", "ai"],
+        },
+        "browser_sensor": {
+            "capture_active": True,
+            "bridge": "http://127.0.0.1:8765",
+            "destinations": ["whatsapp_web"],
+            "outgoing_text": True,
+            "paste": True,
+            "send_click": True,
+            "send_enter": True,
+            "file_upload_capture_active": False,
+            "chat_history_read": False,
+            "raw_text_persisted": False,
+            "failure_mode": "fail_open",
+        },
+        "messaging_sensor": {
+            "capture_active_windows": True,
+            "capture_mode": "clipboard_foreground_target",
+            "providers": ["whatsapp", "teams", "slack", "telegram", "discord"],
+            "raw_clipboard_stored": False,
+            "clipboard_block_supported": True,
+            "web_capture_active": False,
+            "file_upload_capture_active": False,
+            "note": "Windows desktop messaging protection observes sensitive clipboard exposure to recognized foreground messaging apps. It does not read chat messages or decrypt traffic.",
+        },
+        "context_engine": {
+            "co_occurrence": True,
+            "bulk_detection": True,
+            "sensitive_filename": True,
+            "destination_trust": True,
+            "explainable_risk": True,
+            "incident_correlation": True,
+            "correlation_window_minutes": 5,
+        },
+        "optional_custom_examples": ["CEP_BR"],
         "classifiers": [
-            "CPF", "CNPJ", "CREDIT_CARD", "EMAIL_ADDRESS", "RG_BR", "CEP_BR", "PHONE_BR",
+            "CPF", "CNPJ", "CREDIT_CARD", "EMAIL_ADDRESS", "RG_BR", "PHONE_BR",
             "PIX_KEY", "BANK_ACCOUNT", "PASSPORT", "CREDENTIAL", "SECRET"
         ],
         "enforcement": {

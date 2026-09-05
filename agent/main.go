@@ -21,7 +21,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-const version = "0.5.4"
+const version = "0.6.2"
 
 var recentEvents = map[string]time.Time{}
 var recentEventsMu sync.Mutex
@@ -53,23 +53,29 @@ type PolicyDecision struct {
 }
 
 type Event struct {
-	EventID        string `json:"event_id"`
-	EndpointID     string `json:"endpoint_id"`
-	Hostname       string `json:"hostname"`
-	Username       string `json:"username,omitempty"`
-	Process        string `json:"process,omitempty"`
-	ObjectPath     string `json:"object_path,omitempty"`
-	ObjectHash     string `json:"object_hash,omitempty"`
-	Classification string `json:"classification"`
-	Severity       string `json:"severity"`
-	Action         string `json:"action"`
-	MaskedValue    string `json:"masked_value,omitempty"`
-	Fingerprint    string `json:"fingerprint,omitempty"`
-	Channel        string `json:"channel"`
-	Policy         string `json:"policy,omitempty"`
-	Evidence       string `json:"evidence,omitempty"`
-	Blocked        bool   `json:"blocked"`
-	DocumentType   string `json:"document_type,omitempty"`
+	EventID             string   `json:"event_id"`
+	EndpointID          string   `json:"endpoint_id"`
+	Hostname            string   `json:"hostname"`
+	Username            string   `json:"username,omitempty"`
+	Process             string   `json:"process,omitempty"`
+	ObjectPath          string   `json:"object_path,omitempty"`
+	ObjectHash          string   `json:"object_hash,omitempty"`
+	Classification      string   `json:"classification"`
+	Severity            string   `json:"severity"`
+	Action              string   `json:"action"`
+	MaskedValue         string   `json:"masked_value,omitempty"`
+	Fingerprint         string   `json:"fingerprint,omitempty"`
+	Channel             string   `json:"channel"`
+	Policy              string   `json:"policy,omitempty"`
+	Evidence            string   `json:"evidence,omitempty"`
+	Blocked             bool     `json:"blocked"`
+	DocumentType        string   `json:"document_type,omitempty"`
+	Destination         string   `json:"destination,omitempty"`
+	DetectionCount      int      `json:"detection_count,omitempty"`
+	ClassificationCount int      `json:"classification_count,omitempty"`
+	ContextTags         []string `json:"context_tags,omitempty"`
+	SensitiveFilename   bool     `json:"sensitive_filename,omitempty"`
+	DestinationTrust    string   `json:"destination_trust,omitempty"`
 }
 
 func digits(s string) string {
@@ -387,6 +393,7 @@ func inspect(path, api, endpointID, hostname, username, channel string) {
 		return
 	}
 
+	objectContext := buildObjectContext(path, channel, detections)
 	objectHash := fileHash(path)
 	blockedByClassification := map[string]bool{}
 	enforcementEvidence := map[string]string{}
@@ -441,6 +448,9 @@ func inspect(path, api, endpointID, hostname, username, channel string) {
 
 		decision := policyByClassification[detection.Classification]
 		evidence := inspection + "+" + detection.Evidence
+		if len(objectContext.ContextTags) > 0 {
+			evidence += "+context:" + strings.Join(objectContext.ContextTags, ",")
+		}
 		if extra := enforcementEvidence[detection.Classification]; extra != "" {
 			evidence += "+" + extra
 		}
@@ -451,22 +461,27 @@ func inspect(path, api, endpointID, hostname, username, channel string) {
 				fingerprint(path + detection.Classification + detection.Value)[:12],
 				time.Now().UnixNano(),
 			),
-			EndpointID:     endpointID,
-			Hostname:       hostname,
-			Username:       username,
-			Process:        "bsc-dlp-agent",
-			ObjectPath:     path,
-			ObjectHash:     objectHash,
-			Classification: detection.Classification,
-			Severity:       decision.Severity,
-			Action:         decision.Action,
-			MaskedValue:    mask(detection.Value),
-			Fingerprint:    fp,
-			Channel:        channel,
-			Policy:         decision.Policy,
-			Evidence:       evidence,
-			Blocked:        blockedByClassification[detection.Classification],
-			DocumentType:   docType,
+			EndpointID:          endpointID,
+			Hostname:            hostname,
+			Username:            username,
+			Process:             "bsc-dlp-agent",
+			ObjectPath:          path,
+			ObjectHash:          objectHash,
+			Classification:      detection.Classification,
+			Severity:            decision.Severity,
+			Action:              decision.Action,
+			MaskedValue:         mask(detection.Value),
+			Fingerprint:         fp,
+			Channel:             channel,
+			Policy:              decision.Policy,
+			Evidence:            evidence,
+			Blocked:             blockedByClassification[detection.Classification],
+			DocumentType:        docType,
+			DetectionCount:      objectContext.DetectionCount,
+			ClassificationCount: objectContext.ClassificationCount,
+			ContextTags:         objectContext.ContextTags,
+			SensitiveFilename:   objectContext.SensitiveFilename,
+			DestinationTrust:    objectContext.DestinationTrust,
 		}
 
 		if err := postJSON(api+"/events", event); err != nil {
@@ -858,6 +873,9 @@ func main() {
 			}
 		}
 	}()
+
+	startMessagingClipboardSensor(api, endpointID, hostname, username)
+	startBrowserBridge(api, endpointID, hostname, username)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

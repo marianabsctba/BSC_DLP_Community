@@ -253,3 +253,144 @@ def test_trilingual_reports(clients):
         print_response = admin.get("/api/v1/reports/print", params={"lang": lang})
         assert print_response.status_code == 200
         assert print_title in print_response.text
+
+
+def test_context_engine_preview_and_correlation(clients):
+    admin, agent, _ = clients
+    assert admin.post(
+        "/api/v1/auth/setup",
+        json={"username": "admin", "password": "Senha-Forte-123!"},
+    ).status_code == 200
+
+    preview = admin.post(
+        "/api/v1/admin/risk-preview",
+        json={
+            "event_id": "preview-only",
+            "endpoint_id": "preview-endpoint",
+            "classification": "CPF",
+            "severity": "HIGH",
+            "action": "BLOCK",
+            "channel": "messaging",
+            "destination": "whatsapp",
+            "blocked": False,
+            "detection_count": 80,
+            "classification_count": 3,
+            "context_tags": ["mass_data", "co_occurrence", "sensitive_filename"],
+            "sensitive_filename": True,
+            "destination_trust": "external",
+        },
+    )
+    assert preview.status_code == 200
+    body = preview.json()
+    assert body["risk_score"] >= 90
+    assert "volume:50+" in body["risk_reasons"]
+    assert "co_occurrence:3+" in body["risk_reasons"]
+    assert "destination:external" in body["risk_reasons"]
+
+    invite = admin.post(
+        "/api/v1/admin/enrollment-token",
+        json={"ttl_minutes": 30, "uses": 1},
+    ).json()["token"]
+    endpoint_id = f"bsc-context-{uuid.uuid4().hex[:8]}"
+    token = agent.post(
+        "/api/v1/enroll",
+        headers={"X-Enrollment-Key": invite},
+        json={"endpoint_id": endpoint_id},
+    ).json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    base = {
+        "endpoint_id": endpoint_id,
+        "hostname": "WIN-CONTEXT",
+        "username": "tester",
+        "object_path": r"E:\\dados\\folha_pagamento.xlsx",
+        "severity": "CRITICAL",
+        "action": "BLOCK",
+        "channel": "removable",
+        "blocked": True,
+        "detection_count": 60,
+        "classification_count": 2,
+        "context_tags": ["mass_data", "co_occurrence", "sensitive_filename"],
+        "sensitive_filename": True,
+        "destination_trust": "untrusted",
+    }
+
+    first = agent.post(
+        "/api/v1/events",
+        headers=headers,
+        json={"event_id": f"evt-{uuid.uuid4().hex}", "classification": "CPF", **base},
+    )
+    second = agent.post(
+        "/api/v1/events",
+        headers=headers,
+        json={"event_id": f"evt-{uuid.uuid4().hex}", "classification": "BANK_ACCOUNT", **base},
+    )
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["incident_key"] == second.json()["incident_key"]
+
+    correlated = admin.get(
+        "/api/v1/incidents/correlated",
+        params={"endpoint": endpoint_id, "page": 1, "page_size": 10},
+    )
+    assert correlated.status_code == 200
+    assert any(
+        item["incident_key"] == first.json()["incident_key"]
+        and item["event_count"] >= 2
+        for item in correlated.json()["items"]
+    )
+
+
+def test_explicit_utc_timestamp_serialization(clients):
+    admin, agent, anonymous = clients
+    assert admin.post(
+        "/api/v1/auth/setup",
+        json={"username": "admin", "password": "Senha-Forte-123!"},
+    ).status_code == 200
+
+    health = anonymous.get("/api/v1/health").json()
+    assert health["server_time_utc"].endswith("Z")
+    assert health["server_time_local"]
+
+    invite = admin.post(
+        "/api/v1/admin/enrollment-token",
+        json={"ttl_minutes": 30, "uses": 1},
+    ).json()["token"]
+    endpoint_id = f"bsc-time-{uuid.uuid4().hex[:8]}"
+    token = agent.post(
+        "/api/v1/enroll",
+        headers={"X-Enrollment-Key": invite},
+        json={"endpoint_id": endpoint_id},
+    ).json()["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    assert agent.post(
+        "/api/v1/endpoints/heartbeat",
+        headers=headers,
+        json={"endpoint_id": endpoint_id, "hostname": "WIN-TIME", "os": "windows"},
+    ).status_code == 200
+
+    assert agent.post(
+        "/api/v1/events",
+        headers=headers,
+        json={
+            "event_id": f"evt-{uuid.uuid4().hex}",
+            "endpoint_id": endpoint_id,
+            "hostname": "WIN-TIME",
+            "classification": "EMAIL_ADDRESS",
+            "severity": "MEDIUM",
+            "action": "AUDIT",
+            "channel": "filesystem",
+        },
+    ).status_code == 200
+
+    payload = admin.get(
+        "/api/v1/events/query",
+        params={"endpoint": endpoint_id, "page": 1, "page_size": 10},
+    ).json()
+    assert payload["items"]
+    assert payload["items"][0]["timestamp"].endswith("Z")
+
+    endpoints = admin.get("/api/v1/endpoints").json()
+    endpoint = next(row for row in endpoints if row["endpoint_id"] == endpoint_id)
+    assert endpoint["last_seen"].endswith("Z")

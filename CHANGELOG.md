@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.6.2 - 2026-09-05
+
+- Novo Browser Guard MV3 para WhatsApp Web em Chrome/Edge.
+- Extensão inspeciona somente conteúdo de saída do composer: paste, clique em enviar e Enter.
+- A extensão não lê histórico de chats e não persiste texto bruto.
+- Bridge local no agente (`127.0.0.1:8765`) reutiliza o mesmo detector, classificador e motor de políticas do endpoint.
+- Eventos usam `channel=messaging` e `destination=whatsapp_web`.
+- Políticas BLOCK/QUARANTINE impedem o paste/envio antes da ação do WhatsApp Web.
+- Em indisponibilidade do bridge local, o comportamento padrão é fail-open com aviso visual.
+- Upload de arquivos pelo navegador ainda não é captura ativa nesta versão.
+
+## 0.6.1 - 2026-09-05
+
+- Windows Messaging Clipboard Sensor para WhatsApp Desktop, Teams, Slack, Telegram e Discord.
+- Inspeção local do clipboard somente quando um app de mensageria reconhecido está em foreground.
+- Conteúdo bruto do clipboard não é persistido; somente valores mascarados/fingerprinted.
+- Políticas BLOCK/QUARANTINE no canal messaging podem limpar o clipboard antes do paste.
+- PII/banking em ALERT por padrão; cartão/segredos/credenciais em BLOCK para mensageria.
+- Não lê mensagens, não quebra E2EE e não intercepta chats.
+- WhatsApp Web e upload de arquivos ainda não são captura ativa nesta versão.
+- Timestamps corrigidos: API emite UTC com Z explícito e a console converte para o horário local do host/browser.
+- PDF/CSV exibem horário local do host.
+- /api/v1/health informa server_time_utc e server_time_local.
+
+## 0.6.0 - 2026-09-05
+
+- Novo **Context-Aware DLP Engine** com co-occurrence, volume, nomes/extensões sensíveis e destination trust.
+- CEP removido dos detectores nativos; continua possível como detector customizado.
+- Risk score passa a ser explicável por `risk_reasons`.
+- Incidentes recebem `incident_key` e podem ser correlacionados em janela de 5 minutos sem perder eventos brutos.
+- Console de Incidentes passa a consumir a visão correlacionada.
+- Adicionado `risk-preview` para testar cenários de política sem gravar evento nem executar enforcement.
+- Fundamentos de canais futuros `clipboard`, `messaging`, `email` e `ai`.
+- WhatsApp, Teams, Slack, Telegram e Discord são modelados como destinos futuros de mensageria, mas **captura ativa de mensagens não é anunciada nesta versão**.
+- Mantidos como canais ativos: filesystem, download, screenshot e removable.
+
 ## 0.5.4 - 2026-09-05
 
 - Console administrativa agora é trilíngue: **Português, English e Español**, com seletor no login e na barra superior.
