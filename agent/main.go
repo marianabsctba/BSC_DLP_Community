@@ -21,7 +21,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-const version = "0.6.3"
+const version = "0.6.4.1"
 
 var recentEvents = map[string]time.Time{}
 var recentEventsMu sync.Mutex
@@ -875,6 +875,7 @@ func main() {
 	}()
 
 	startMessagingClipboardSensor(api, endpointID, hostname, username)
+	startScreenshotClipboardSensor(api, endpointID, hostname, username)
 	startBrowserBridge(api, endpointID, hostname, username)
 
 	watcher, err := fsnotify.NewWatcher()

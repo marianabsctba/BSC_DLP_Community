@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.4.1 - 2026-09-05
+
+- Hotfix do OCR de screenshots no clipboard Windows.
+- Corrige falha `pixReadMemBmp: cannot read compressed BMP files` observada com `CF_DIBV5`.
+- O sensor agora prioriza `CF_BITMAP` e usa GDI `GetDIBits` para normalizar a captura para BMP 24-bit `BI_RGB` antes do Tesseract.
+- DIB/DIBV5 permanece apenas como fallback seguro quando já estiver em formato não comprimido.
+- Nenhuma imagem bruta é enviada ao backend; o BMP temporário continua sendo removido após OCR.
+
+## 0.6.4 - 2026-09-05
+
+- Novo **Windows Clipboard Screenshot OCR Sensor**.
+- Imagens que chegam ao clipboard via captura de tela (incluindo fluxo `Win+Shift+S`) são convertidas temporariamente de DIB/DIBV5 para BMP e inspecionadas localmente por OCR.
+- A imagem bruta não é enviada ao backend e o BMP temporário é removido imediatamente após o OCR.
+- Eventos usam `channel=screenshot`, `destination=clipboard` e `document_type=clipboard_image`.
+- Políticas `BLOCK`/`QUARANTINE` no canal screenshot podem limpar a imagem sensível do clipboard após a detecção.
+- Novas políticas padrão de screenshot: CPF/cartão/segredos/credenciais com proteção forte; CPF-like/CNPJ/banking/PIX em ALERT.
+- Capturas salvas em arquivo continuam usando o sensor de filesystem/screenshot já existente.
+- Limite honesto: a v0.6.4 **não bloqueia o ato de capturar pixels antes da captura**; ela protege o artefato quando ele chega ao clipboard ou ao filesystem.
+
 ## 0.6.3 - 2026-09-05
 
 - Novo **Evasion-Resistant Detection Engine** para identificadores sensíveis.

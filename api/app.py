@@ -236,6 +236,13 @@ def seed_default_policies() -> None:
         ("CPF - Filesystem Audit", "CPF", "MEDIUM", "AUDIT", "filesystem", 100),
         ("CPF - Download Protection", "CPF", "HIGH", "ALERT", "download", 20),
         ("CPF - Screenshot Block", "CPF", "CRITICAL", "BLOCK", "screenshot", 10),
+        ("CPF-like - Screenshot Alert", "CPF_LIKE", "HIGH", "ALERT", "screenshot", 25),
+        ("CNPJ - Screenshot Alert", "CNPJ", "HIGH", "ALERT", "screenshot", 25),
+        ("Card Data - Screenshot Block", "CREDIT_CARD", "CRITICAL", "BLOCK", "screenshot", 5),
+        ("Secrets - Screenshot Block", "SECRET", "CRITICAL", "BLOCK", "screenshot", 5),
+        ("Credentials - Screenshot Block", "CREDENTIAL", "CRITICAL", "BLOCK", "screenshot", 5),
+        ("Bank Data - Screenshot Alert", "BANK_ACCOUNT", "HIGH", "ALERT", "screenshot", 25),
+        ("PIX - Screenshot Alert", "PIX_KEY", "HIGH", "ALERT", "screenshot", 25),
         ("CPF - Removable Media Block", "CPF", "CRITICAL", "BLOCK", "removable", 10),
         ("CNPJ - Removable Media Block", "CNPJ", "CRITICAL", "BLOCK", "removable", 10),
         ("Card Data - Removable Media Block", "CREDIT_CARD", "CRITICAL", "BLOCK", "removable", 10),
@@ -663,7 +670,7 @@ def incident_key_for_event(body: EventIn, incident_type: str, event_time: dateti
 
 app = FastAPI(
     title="BSC DLP API",
-    version="0.6.3",
+    version="0.6.4.1",
     description="BSC DLP Community Edition - admin console, risk engine and endpoint enforcement",
     docs_url=None,
     redoc_url=None,
@@ -700,7 +707,7 @@ def health():
     return {
         "status": "ok",
         "engine": "BSC DLP",
-        "version": "0.6.3",
+        "version": "0.6.4.1",
         "database": "sqlite",
         "server_time_utc": utc_iso(now()),
         "server_time_local": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -2143,6 +2150,16 @@ def capabilities(request: Request):
             "active": ["filesystem", "download", "screenshot", "removable"],
             "active_windows": ["messaging"],
             "foundation": ["clipboard", "email", "ai"],
+        },
+        "screenshot_clipboard_sensor": {
+            "capture_active_windows": True,
+            "capture_mode": "clipboard_image_ocr_cf_bitmap_normalized",
+            "formats": ["CF_BITMAP", "CF_DIBV5", "CF_DIB"],
+            "raw_image_persisted": False,
+            "temporary_bmp_deleted_after_ocr": True,
+            "clipboard_clear_on_block": True,
+            "pre_capture_prevention": False,
+            "note": "Windows clipboard screenshots (including Win+Shift+S when an image reaches the clipboard) are OCR-inspected locally. BLOCK clears the clipboard after detection; it does not prevent the pixels from being captured in the first place.",
         },
         "browser_sensor": {
             "capture_active": True,
