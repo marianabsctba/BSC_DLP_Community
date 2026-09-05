@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">BSC DLP Community architecture</title>
+  <desc id="desc">Architecture showing Windows and Linux endpoint agents, local extraction and OCR, classifiers, policy enforcement, authenticated FastAPI backend, SQLite, risk engine, reports and admin-only console.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#070307"/><stop offset="0.55" stop-color="#120611"/><stop offset="1" stop-color="#050205"/></linearGradient>
+    <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ff2d95"/><stop offset="1" stop-color="#ff6db6"/></linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1a0b18"/><stop offset="1" stop-color="#0b050b"/></linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M0,0 L12,6 L0,12 z" fill="#ff4fa8"/></marker>
+    <style>
+      .title{font:700 38px Inter,Segoe UI,Arial,sans-serif;fill:#fff}.subtitle{font:500 17px Inter,Segoe UI,Arial,sans-serif;fill:#b993aa}.boxTitle{font:700 20px Inter,Segoe UI,Arial,sans-serif;fill:#fff}.boxSub{font:500 14px Inter,Segoe UI,Arial,sans-serif;fill:#c2a4b6}.small{font:600 13px Inter,Segoe UI,Arial,sans-serif;fill:#a78799}.pink{fill:#ff65b5}.muted{fill:#7e6074}.tag{font:700 12px Inter,Segoe UI,Arial,sans-serif;fill:#ff9bce}.mono{font:600 12px Consolas,monospace;fill:#e5cad9}
+    </style>
+  </defs>
+  <rect width="1600" height="900" rx="28" fill="url(#bg)"/>
+  <circle cx="1330" cy="130" r="280" fill="#ff2d95" opacity=".04"/><circle cx="250" cy="790" r="320" fill="#ff2d95" opacity=".035"/>
+  <text x="70" y="76" class="title">BSC DLP Community — Architecture</text>
+  <text x="70" y="108" class="subtitle">Endpoint-first detection • local content inspection • centralized admin control • PT / EN / ES</text>
+
+  <!-- endpoint side -->
+  <rect x="65" y="155" width="470" height="640" rx="24" fill="url(#panel)" stroke="#4a243d" stroke-width="2"/>
+  <text x="95" y="196" class="boxTitle">Managed Endpoints</text><text x="95" y="220" class="boxSub">Windows + Linux agents</text>
+
+  <rect x="95" y="250" width="410" height="104" rx="16" fill="#120812" stroke="#66304f"/>
+  <text x="120" y="284" class="boxTitle">BSC DLP Agent</text><text x="120" y="309" class="boxSub">Authenticated endpoint sensor</text>
+  <text x="120" y="334" class="small">Filesystem • Downloads • Screenshots • Removable media</text>
+
+  <rect x="95" y="382" width="195" height="154" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="116" y="415" class="boxTitle">Extract &amp; OCR</text>
+  <text x="116" y="442" class="small">PDF / DOCX / XLSX</text><text x="116" y="465" class="small">PPTX / TXT / CSV</text><text x="116" y="488" class="small">Images + scanned PDF</text><text x="116" y="511" class="tag">LOCAL PROCESSING</text>
+
+  <rect x="310" y="382" width="195" height="154" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="331" y="415" class="boxTitle">Classify</text>
+  <text x="331" y="442" class="small">CPF • CNPJ • Cards</text><text x="331" y="465" class="small">PII • Credentials</text><text x="331" y="488" class="small">Secrets • Custom RE2</text><text x="331" y="511" class="tag">MASK + FINGERPRINT</text>
+
+  <rect x="95" y="565" width="410" height="188" rx="16" fill="#100710" stroke="#743157"/>
+  <text x="120" y="600" class="boxTitle">Policy &amp; Enforcement</text>
+  <text x="120" y="628" class="small">ALLOW • AUDIT • ALERT • BLOCK • QUARANTINE</text>
+  <rect x="120" y="650" width="154" height="44" rx="10" fill="#351022" stroke="#8e2b5b"/><text x="145" y="678" class="tag">LOCAL QUARANTINE</text>
+  <text x="120" y="723" class="boxSub">BLOCK is reactive after write detection.</text>
+  <text x="120" y="745" class="small">Pre-I/O Windows blocking requires a future signed minifilter.</text>
+
+  <!-- transport -->
+  <line x1="535" y1="460" x2="655" y2="460" stroke="#ff4fa8" stroke-width="4" marker-end="url(#arrow)" filter="url(#glow)"/>
+  <text x="558" y="438" class="tag">AUTHENTICATED</text><text x="568" y="487" class="small">JSON / Bearer</text>
+
+  <!-- backend -->
+  <rect x="655" y="155" width="400" height="640" rx="24" fill="url(#panel)" stroke="#702d55" stroke-width="2"/>
+  <text x="685" y="196" class="boxTitle">BSC DLP Backend</text><text x="685" y="220" class="boxSub">FastAPI + SQLite</text>
+
+  <rect x="690" y="250" width="330" height="112" rx="16" fill="#140814" stroke="#6c2b51"/>
+  <text x="715" y="284" class="boxTitle">Agent API</text><text x="715" y="311" class="small">Enrollment • Heartbeat • Policies</text><text x="715" y="335" class="small">Detection rules • Events</text>
+
+  <rect x="690" y="390" width="155" height="145" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="712" y="423" class="boxTitle">Risk Engine</text><text x="712" y="452" class="small">Context</text><text x="712" y="475" class="small">Severity</text><text x="712" y="498" class="small">Channel + burst</text>
+
+  <rect x="865" y="390" width="155" height="145" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="887" y="423" class="boxTitle">Incidents</text><text x="887" y="452" class="small">Prioritization</text><text x="887" y="475" class="small">Filtering</text><text x="887" y="498" class="small">Pagination</text>
+
+  <rect x="690" y="563" width="155" height="156" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="712" y="596" class="boxTitle">SQLite</text><text x="712" y="625" class="small">Endpoints</text><text x="712" y="648" class="small">Policies + events</text><text x="712" y="671" class="small">Admin sessions</text><text x="712" y="694" class="tag">LOCAL DEFAULT</text>
+
+  <rect x="865" y="563" width="155" height="156" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="887" y="596" class="boxTitle">Reports</text><text x="887" y="625" class="small">PDF</text><text x="887" y="648" class="small">CSV</text><text x="887" y="671" class="small">Print view</text><text x="887" y="694" class="tag">MASKED DATA</text>
+
+  <!-- admin -->
+  <line x1="1055" y1="460" x2="1170" y2="460" stroke="#ff4fa8" stroke-width="4" marker-end="url(#arrow)" filter="url(#glow)"/>
+  <text x="1081" y="438" class="tag">ADMIN ONLY</text>
+
+  <rect x="1170" y="155" width="365" height="640" rx="24" fill="url(#panel)" stroke="#702d55" stroke-width="2"/>
+  <text x="1200" y="196" class="boxTitle">Administrative Console</text><text x="1200" y="220" class="boxSub">Black + pink • PT / EN / ES</text>
+
+  <rect x="1200" y="250" width="305" height="98" rx="16" fill="#140814" stroke="#6c2b51"/>
+  <text x="1225" y="283" class="boxTitle">Authentication</text><text x="1225" y="311" class="small">Admin session separate from agent tokens</text><text x="1225" y="333" class="tag">END USERS HAVE NO CONSOLE ACCESS</text>
+
+  <rect x="1200" y="376" width="145" height="130" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="1222" y="410" class="boxTitle">Overview</text><text x="1222" y="438" class="small">Risk score</text><text x="1222" y="461" class="small">Incidents</text><text x="1222" y="484" class="small">Endpoint health</text>
+
+  <rect x="1360" y="376" width="145" height="130" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="1382" y="410" class="boxTitle">Control</text><text x="1382" y="438" class="small">Policies</text><text x="1382" y="461" class="small">Detectors</text><text x="1382" y="484" class="small">Enrollment</text>
+
+  <rect x="1200" y="533" width="305" height="186" rx="16" fill="#100710" stroke="#4b263e"/>
+  <text x="1225" y="568" class="boxTitle">Investigation &amp; Reporting</text>
+  <text x="1225" y="598" class="small">Events + incidents with filters</text><text x="1225" y="624" class="small">10 / 25 / 50 / 100 rows per page</text><text x="1225" y="650" class="small">PDF / CSV / print-ready reports</text><text x="1225" y="676" class="small">Sensitive values remain masked</text>
+
+  <text x="70" y="850" class="small">Current channels: filesystem • download • screenshot • removable / USB</text>
+  <text x="1530" y="850" text-anchor="end" class="tag">DETECT • CONTROL • PROTECT</text>
+</svg>

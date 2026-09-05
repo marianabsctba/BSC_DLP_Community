@@ -1,231 +1,520 @@
-# BSC DLP Community Edition
+<div align="center">
+  <img src="dashboard/assets/bsc-dlp-icon.png" width="170" alt="BSC DLP Community logo" />
 
-Open-source Data Loss Prevention para Windows/Linux, com agente em Go, console administrativa FastAPI, SQLite, políticas por canal, classificação local de documentos, risk engine e enforcement de endpoint.
+  # BSC DLP Community
 
-## v0.5.4 - GitHub Ready + PDF Reporting + PT/EN/ES
+  **Open-source Data Loss Prevention for Windows & Linux endpoints**  
+  **Detect • Classify • Control • Protect**
 
-A v0.5.4 é a base **GitHub-ready** do projeto. A console administrativa é trilíngue (**Português, English e Español**) e lembra a preferência do administrador. O relatório administrativo é gerado como **PDF real** pelo backend, respeitando filtros e idioma da console; CSV e visualização de impressão seguem a mesma preferência. O PDF inclui métricas, distribuição por classificação/canal/ação e tabela detalhada sem expor valores sensíveis em claro.
+  <sub>Console administrativa em Português, English e Español · Endpoint-first · Community driven</sub>
 
-A Community Edition foi desenhada para ser simples para dois públicos diferentes:
+  <br><br>
 
-- **Administrador:** inicia a console, cria a conta admin no primeiro acesso, define policies, acompanha risco/incidentes e gera códigos temporários de enrollment.
-- **Usuário do endpoint:** instala somente o Agent. Não recebe login, senha ou acesso aos dados da console.
+  [![CI](https://github.com/marianabsctba/BSC_DLP_Community/actions/workflows/ci.yml/badge.svg)](https://github.com/marianabsctba/BSC_DLP_Community/actions/workflows/ci.yml)
+  ![Version](https://img.shields.io/badge/version-0.5.4-ff2d95?style=flat-square)
+  ![License](https://img.shields.io/badge/license-AGPL--3.0-ff2d95?style=flat-square)
+  ![Agent](https://img.shields.io/badge/agent-Go-00ADD8?style=flat-square&logo=go&logoColor=white)
+  ![Backend](https://img.shields.io/badge/backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
+  ![Platforms](https://img.shields.io/badge/endpoints-Windows%20%7C%20Linux-111111?style=flat-square)
+  ![Languages](https://img.shields.io/badge/UI-PT%20%7C%20EN%20%7C%20ES-ff2d95?style=flat-square)
+</div>
 
-A identidade visual oficial da console é **preto + rosa**, com o ícone da pantera BSC DLP. No Windows, o primeiro start cria/atualiza um atalho na Área de Trabalho usando a marca oficial.
+---
 
-Se a porta `8000` já estiver ocupada no modo local, o launcher escolhe automaticamente a próxima porta livre e abre a console no endereço correto.
+## What is BSC DLP?
 
+**BSC DLP Community** is an open-source Data Loss Prevention project focused on **endpoint visibility, sensitive-data classification, policy enforcement, behavioral risk and investigation**.
 
-### Idiomas
+The endpoint agent inspects content **locally**, applies classifiers and policies, and sends the console only the telemetry required for investigation — such as classification, masked value, fingerprint, object hash, channel, risk and enforcement result.
 
-O seletor de idioma aparece na tela de login e na barra superior da console. A escolha fica armazenada localmente no navegador do administrador e pode ser alterada a qualquer momento:
+The project is designed around a simple principle:
 
-- Português (`pt`)
-- English (`en`)
-- Español (`es`)
+> **Do not only ask _what sensitive data exists_. Ask _what is being done with it_.**
 
-PDF, CSV e visualização de impressão usam automaticamente o idioma selecionado. Constantes técnicas como `BLOCK`, `AUDIT`, nomes de classificadores e canais permanecem estáveis para facilitar investigação e integração.
+### 🇧🇷 Resumo
 
-## Começar no Windows
+DLP open source com agente Windows/Linux, inspeção local de documentos, OCR, políticas, bloqueio/quarentena, incidentes, filtros, paginação e relatórios administrativos.
 
-### Teste local / laboratório
+### 🇪🇸 Resumen
 
-1. Extraia a release.
-2. Execute `START-BSC-DLP.cmd`.
-3. O navegador abre a console.
-4. No primeiro acesso, crie o administrador.
-5. O endpoint local é iniciado automaticamente.
+DLP open source con agente Windows/Linux, inspección local de documentos, OCR, políticas, bloqueo/cuarentena, incidentes, filtros, paginación e informes administrativos.
 
-Para parar: `STOP-BSC-DLP.cmd`.
+---
 
-Para zerar DB, credenciais e configuração local: `RESET-BSC-DLP.cmd`.
+## Screenshots
 
-### Console central para endpoints da LAN
+> Screenshots below use **synthetic demo data**. No real personal or production data is included.
 
-Execute `START-BSC-DLP-LAN.cmd`. A API passa a escutar nas interfaces de rede. Use apenas em rede confiável para laboratório; para produção, publique a console atrás de TLS/reverse proxy.
+### Admin login
 
-Na console, clique em **Adicionar endpoint**, gere um código temporário e, no pacote copiado para o endpoint, execute:
+<div align="center">
+  <img src="docs/screenshots/01-login.png" width="92%" alt="BSC DLP admin login" />
+</div>
 
-```powershell
-.\INSTALL-ENDPOINT.cmd "http://SERVIDOR:8000" "CODIGO-DE-ENROLLMENT"
-```
+### Risk & protection overview
 
-O instalador registra o endpoint, salva somente o token individual do agente e configura inicialização no logon do usuário. Ele não cria credenciais de console.
+<div align="center">
+  <img src="docs/screenshots/02-dashboard.png" width="92%" alt="BSC DLP dashboard" />
+</div>
 
-## O que funciona
+### Events, filters and pagination
 
-### Console administrativa
+<div align="center">
+  <img src="docs/screenshots/03-events.png" width="92%" alt="BSC DLP events and filters" />
+</div>
 
-- Primeiro acesso com criação de um único administrador.
-- Senha derivada com `scrypt`; valor em texto puro não é armazenado.
-- Sessão administrativa via cookie HttpOnly / SameSite Strict.
-- Endpoints, policies, eventos, incidents e stats protegidos por autenticação administrativa.
-- Endpoint agent usa autenticação Bearer separada e não pode consultar dados administrativos.
-- Enrollment temporário de uso limitado gerado pelo admin.
-- Revogação da credencial do endpoint.
+<table>
+<tr>
+<td width="50%" valign="top">
+<strong>Reports</strong><br><br>
+<img src="docs/screenshots/04-reports.png" alt="BSC DLP reports" />
+</td>
+<td width="50%" valign="top">
+<strong>Managed endpoints</strong><br><br>
+<img src="docs/screenshots/05-endpoints.png" alt="BSC DLP endpoints" />
+</td>
+</tr>
+</table>
 
-### Behavior / Risk
+---
 
-O backend calcula risco por evento considerando severidade, canal, ação e burst recente. USB/removable, screenshot, email/AI (quando os canais forem ativados) e repetição em poucos minutos aumentam o score.
+## Architecture
 
-Eventos com `risk_score >= 40` aparecem como incidentes priorizados.
+<div align="center">
+  <img src="docs/architecture.svg" width="100%" alt="BSC DLP architecture" />
+</div>
 
-### Document DLP
-
-Extração ocorre **no endpoint**. O documento bruto não é enviado para a console.
-
-- PDF: `pdftotext` quando disponível, parser interno best-effort e OCR para PDF escaneado quando `pdftoppm + Tesseract` estão disponíveis.
-- DOCX: extração OpenXML local.
-- XLSX: worksheets/shared strings OpenXML.
-- PPTX: slides/notes OpenXML.
-- TXT, CSV, JSON, XML, LOG, MD, INI, CONF, YAML/YML.
-- Imagens: PNG, JPG/JPEG, TIFF, BMP, WEBP via Tesseract. No Windows Source One-Click, o launcher procura o OCR automaticamente e tenta bootstrap via `winget` quando necessário. O agente usa fallback `por+eng` → `eng`.
-
-### Classificadores atuais
-
-- CPF e CNPJ com checksum.
-- Cartão com validação Luhn.
-- E-mail.
-- RG, CEP, telefone, PIX, conta bancária e passaporte com detecção contextual.
-- Credenciais: password/senha, Bearer tokens e padrões de autenticação.
-- Secrets: AWS, GitHub, Google API, Slack, JWT, private keys e assignments de secrets.
-- Regras customizadas pelo administrador usando regex compatível com RE2; os agentes atualizam essas regras automaticamente.
-
-A console recebe masked value, fingerprint SHA-256, hash do objeto, tipo de documento, canal e evidência — não o valor sensível em claro.
-
-### Canais atuais
-
-- `filesystem`
-- `download`
-- `screenshot`
-- `removable` / USB
-
-Windows descobre Known Folders reais via `SHGetKnownFolderPath`, respeitando localização, OneDrive e Known Folder Move. Downloads de navegador recebem tratamento de settle/rename para que arquivos temporários finalizados não escapem da inspeção.
-
-## Filtros, paginação e relatórios
-
-A console evita listas infinitas de telemetria. Eventos e incidentes podem ser filtrados por período, endpoint/usuário, classificação, canal, severidade, ação, bloqueio e risco mínimo, com 10/25/50/100 registros por página.
-
-A área **Relatórios** oferece:
-
-- resumo de eventos, incidentes, bloqueios, endpoints e risco máximo;
-- distribuição por classificação e canal;
-- exportação CSV com valores sensíveis mascarados e proteção contra CSV/Excel formula injection;
-- relatório imprimível pelo navegador, pronto para **Salvar como PDF**;
-- limite operacional de até 10.000 eventos por exportação para proteger a console local.
-
-## Detectores customizados
-
-O administrador pode criar uma classificação própria informando nome, classificação e regex compatível com RE2. A regra é armazenada na console e distribuída aos agentes autenticados. Exemplo: `CONTRATO-[0-9]{8}` com classificação `CONTRACT_ID`. Se não existir policy específica, a classificação cai em `AUDIT` por padrão.
-
-## BLOCK de verdade — o que v0.4 faz
-
-Policies `BLOCK` e `QUARANTINE` agora executam enforcement no endpoint.
-
-Quando um objeto sensível é detectado, o agente copia o arquivo para a quarentena local protegida e remove o original. Isso funciona inclusive entre volumes, como USB → disco local. O evento registra `blocked=true` somente quando o enforcement realmente terminou com sucesso.
-
-Por padrão, screenshot e removable media com CPF são policies de `BLOCK`.
-
-### Limite técnico declarado
-
-A v0.4 faz **bloqueio reativo após o write ser observado**. Ela não afirma bloquear o write antes de chegar ao filesystem.
-
-Bloqueio pré-I/O no Windows exige um **minifilter driver assinado**. Esse é um módulo de enforcement separado para uma versão futura. O projeto não declara capacidade kernel que ainda não existe.
-
-## Arquitetura
+### Data flow
 
 ```text
-                        ADMIN ONLY
-                    ┌─────────────────┐
-                    │ BSC DLP Console │
-                    │ login / risk    │
-                    │ incidents       │
-                    │ policies        │
-                    │ enrollment      │
-                    └────────┬────────┘
-                             │
-                        FastAPI/SQLite
-                             │
-             authenticated agent API
-                             │
-          ┌──────────────────┴──────────────────┐
-          │                                     │
-   Windows Endpoint                       Linux Endpoint
-   BSC DLP Agent                          BSC DLP Agent
-          │
-   ┌──────┼────────┬──────────┐
-   │      │        │          │
- files  downloads  USB     screenshots
-   │      │        │          │
-   └──────┴────┬───┴──────────┘
-               │
-       Local extraction/OCR
-               │
-         classifiers
-               │
-         policy resolve
-               │
-      audit / alert / block
-               │
-       endpoint quarantine
+Endpoint activity
+      ↓
+BSC DLP Agent
+      ↓
+Local extraction / OCR
+      ↓
+Native + custom classifiers
+      ↓
+Policy resolution
+      ↓
+ALLOW / AUDIT / ALERT / BLOCK / QUARANTINE
+      ↓
+Masked event telemetry
+      ↓
+FastAPI + SQLite
+      ↓
+Risk / incidents / reports
+      ↓
+Admin-only console
 ```
 
-## Runtime local
+---
 
-Console local:
+## Current capabilities
 
-`%LOCALAPPDATA%\BSC-DLP-Community`
+### Endpoint channels
 
-Endpoint instalado:
+| Channel | Status | What it covers |
+|---|:---:|---|
+| Filesystem | ✅ | Sensitive files observed in monitored folders |
+| Downloads | ✅ | Browser/download folders, including settle/rename handling |
+| Screenshots | ✅ | Image inspection with OCR |
+| Removable / USB | ✅ | Sensitive objects written to removable media |
 
-`%LOCALAPPDATA%\BSC-DLP-Endpoint`
+### Documents & OCR
 
-A quarentena fica dentro do runtime do endpoint/console e não dentro da pasta da aplicação.
+Extraction happens **on the endpoint**. Raw documents are not uploaded to the administrative console.
 
-## Testes
+| Format | Inspection |
+|---|---|
+| PDF | Text extraction + best-effort parser + OCR fallback for scanned PDFs |
+| DOCX | OpenXML text extraction |
+| XLSX | Worksheets/shared strings extraction |
+| PPTX | Slides/notes extraction |
+| TXT / CSV / JSON / XML / LOG / MD | Native text inspection |
+| PNG / JPG / JPEG / TIFF / BMP / WEBP | Tesseract OCR |
 
-Backend/API:
+For scanned PDFs, OCR is available when **Tesseract + `pdftoppm`** are available on the endpoint.
+
+### Native classifiers
+
+- **CPF** — checksum validation
+- **CNPJ** — checksum validation
+- **Credit card** — Luhn validation
+- **E-mail address**
+- **Brazilian RG** — contextual detection
+- **CEP** — contextual detection
+- **Brazilian phone number**
+- **PIX key**
+- **Bank account**
+- **Passport**
+- **Credentials**
+- **Secrets** — including common cloud/API/token patterns
+
+The admin can also create **custom RE2-compatible regex detectors** without recompiling the agent.
+
+Example:
+
+```text
+Pattern:        CONTRATO-[0-9]{8}
+Classification: CONTRACT_ID
+```
+
+Custom detection rules are distributed to authenticated agents automatically.
+
+---
+
+## Policy engine
+
+Policies are resolved by **classification + channel + priority**.
+
+Supported actions:
+
+| Action | Behavior |
+|---|---|
+| `ALLOW` | Explicitly allow |
+| `AUDIT` | Record activity |
+| `ALERT` | Record and raise visibility/risk |
+| `BLOCK` | Enforce endpoint quarantine when possible |
+| `QUARANTINE` | Move the detected object into local quarantine |
+
+Default protection includes, among others, **CPF screenshot blocking**, **CPF/CNPJ/card data on removable media**, and protections for credentials/secrets.
+
+### Enforcement honesty
+
+Current filesystem enforcement is **reactive after the write is observed**. When a `BLOCK` or `QUARANTINE` policy succeeds, the object is copied into local endpoint quarantine and removed from the source path; the event records `blocked=true` only after successful enforcement.
+
+BSC DLP **does not claim pre-I/O kernel blocking yet**.
+
+True Windows pre-write prevention requires a **signed minifilter driver**, which remains a planned enforcement module.
+
+---
+
+## Behavioral risk & incidents
+
+BSC DLP calculates risk using context such as:
+
+- classification and severity;
+- channel (`download`, `screenshot`, `removable`, etc.);
+- policy action;
+- successful blocking;
+- recent event bursts from the same endpoint.
+
+High-risk activity is surfaced as prioritized incidents, for example:
+
+```text
+Possible removable-media exfiltration
+Endpoint: FINANCE-01
+Classification: CPF
+Channel: removable
+Action: BLOCK
+Risk: 82/100
+```
+
+The objective is to correlate **data + context + action**, instead of producing a flat list of regex matches.
+
+---
+
+## Admin-only console
+
+Endpoint users **do not receive console credentials**.
+
+Administrative and agent authentication are separate:
+
+- first access creates the administrator;
+- passwords are derived using `scrypt` + salt;
+- admin sessions use HttpOnly / SameSite cookies;
+- endpoints use individual Bearer credentials;
+- enrollment codes are temporary and use-limited;
+- endpoint credentials can be revoked from the console.
+
+The console includes:
+
+- overview and behavioral risk;
+- incidents;
+- managed endpoints;
+- policies;
+- native and custom detectors;
+- document/OCR capabilities;
+- events;
+- reports;
+- administrative settings.
+
+---
+
+## Filters, pagination & reporting
+
+Events and incidents can be filtered by criteria such as:
+
+- date/time range;
+- endpoint or user;
+- classification;
+- channel;
+- severity;
+- action;
+- blocked state;
+- minimum risk;
+- search text.
+
+Pagination supports **10 / 25 / 50 / 100** rows per page.
+
+Reports support:
+
+- **real PDF generation**;
+- CSV export;
+- print view;
+- executive metrics;
+- classification/channel/action distribution;
+- filtered event detail;
+- masked values rather than raw sensitive content.
+
+CSV export includes mitigation for spreadsheet formula injection.
+
+---
+
+## PT / EN / ES
+
+The administrative interface supports:
+
+- 🇧🇷 **Português**
+- 🇺🇸 **English**
+- 🇪🇸 **Español**
+
+The selected language is remembered by the browser and is also used by **PDF, CSV and print reports**.
+
+Technical constants such as `BLOCK`, `AUDIT`, classification names and channel identifiers remain stable to simplify investigation and integrations.
+
+---
+
+## Quick start — Windows source mode
+
+### Requirements
+
+For development/source mode:
+
+- Windows 10/11
+- **Python 3.10+**
+- **Go 1.22+**
+
+The prebuilt Community release can package the backend and agent so end users do not need Python or Go installed.
+
+### Clone
+
+```powershell
+git clone https://github.com/marianabsctba/BSC_DLP_Community.git
+cd BSC_DLP_Community
+```
+
+### Start
+
+```powershell
+.\START-BSC-DLP.cmd
+```
+
+The launcher prepares the local runtime, starts the backend and endpoint agent, and opens the console.
+
+On first access, create the administrator account.
+
+### Stop
+
+```powershell
+.\STOP-BSC-DLP.cmd
+```
+
+### Reset local lab data
+
+```powershell
+.\RESET-BSC-DLP.cmd
+```
+
+This removes local Community runtime data such as the lab database and local credentials. Use it intentionally.
+
+---
+
+## Central console for LAN endpoints
+
+For a trusted lab/LAN environment:
+
+```powershell
+.\START-BSC-DLP-LAN.cmd
+```
+
+Then, from the admin console:
+
+1. Open **Endpoints**.
+2. Click **Add endpoint**.
+3. Generate a temporary enrollment code.
+4. Run the generated installer command on the target endpoint.
+
+Example:
+
+```powershell
+.\INSTALL-ENDPOINT.cmd "http://SERVER:8000" "TEMPORARY-ENROLLMENT-CODE"
+```
+
+> For production or untrusted networks, publish the central console behind **TLS / a properly configured reverse proxy**. Do not expose a plain HTTP management service to the Internet.
+
+---
+
+## Local runtime
+
+Windows Community console runtime:
+
+```text
+%LOCALAPPDATA%\BSC-DLP-Community
+```
+
+Installed endpoint runtime:
+
+```text
+%LOCALAPPDATA%\BSC-DLP-Endpoint
+```
+
+Quarantine lives in the runtime area — not inside the repository checkout.
+
+The repository `.gitignore` is intended to keep databases, credentials, logs, virtual environments and local runtime artifacts out of Git.
+
+---
+
+## Security model
+
+BSC DLP Community is designed to minimize unnecessary sensitive-data movement:
+
+- document extraction occurs locally on the endpoint;
+- the console receives masked values and fingerprints rather than raw matched values;
+- object SHA-256 hashes support evidence correlation;
+- admin and agent authentication are separated;
+- endpoint credentials are individually revocable;
+- reports avoid exposing raw detected secrets/PII;
+- the project does not claim kernel enforcement capabilities that are not implemented.
+
+Please read [`SECURITY.md`](SECURITY.md) before exposing a central console beyond a local lab environment.
+
+---
+
+## Project structure
+
+```text
+BSC_DLP_Community/
+├── agent/                  # Go endpoint agent
+│   ├── detectors.go
+│   ├── extractors.go
+│   ├── enforcement.go
+│   ├── platform_windows.go
+│   └── platform_linux.go
+├── api/                    # FastAPI backend
+├── classifiers/            # classifier helpers/patterns
+├── dashboard/              # black + pink admin console
+│   └── assets/             # official BSC DLP brand
+├── docs/
+│   ├── architecture.svg
+│   └── screenshots/
+├── scripts/windows/        # start, build, install, reset, uninstall
+├── tests/                  # backend/API regression tests
+├── .github/workflows/      # CI and Windows release workflow
+├── START-BSC-DLP.cmd
+├── INSTALL-ENDPOINT.cmd
+└── README.md
+```
+
+---
+
+## Tests
+
+### Backend / API
 
 ```powershell
 python -m pip install -r requirements-dev.txt
 pytest -q
 ```
 
-Teste manual de OCR em Downloads:
-
-```powershell
-.\TEST-OCR-DOWNLOAD.cmd
-```
-
-O teste cria `bsc-dlp-ocr-cpf-test.png` em Downloads com um CPF fictício válido para checksum. O esperado é evento `channel=download`, `document_type=png` e evidência `image_ocr`.
-
-Agente Go:
+### Agent
 
 ```powershell
 cd agent
 go test ./...
 ```
 
-
-## Build para comunidade
-
-A release binária Windows é construída por:
+### OCR smoke test
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\windows\Build-Community-Release.ps1 -Version 0.5.4
+.\TEST-OCR-DOWNLOAD.cmd
 ```
 
-O workflow `.github/workflows/windows-release.yml` compila o agente Go e empacota o backend com PyInstaller. O usuário da release final não precisa instalar Python ou Go.
+The OCR smoke test creates synthetic test content in Downloads so you can verify the image → OCR → classification → policy → event pipeline.
 
-## Próximos módulos
+---
 
-- Windows minifilter para pre-write enforcement.
-- Device Control avançado: VID/PID/serial, allowlist, read-only e policy por dispositivo.
-- Email DLP.
-- AI DLP / AI Gateway para prompts e uploads.
-- Packs adicionais de classificadores e templates de políticas.
-- RBAC multi-admin para ambientes maiores.
+## Build a Community Windows release
 
-## Licença
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass `
+  -File .\scripts\windows\Build-Community-Release.ps1 `
+  -Version 0.5.4
+```
 
-MIT. Veja `LICENSE`.
+GitHub workflows include:
+
+- `ci.yml` — regression/tests on push and pull request;
+- `windows-release.yml` — Windows Community release build.
+
+---
+
+## Roadmap
+
+- [ ] Signed Windows minifilter for true pre-write enforcement
+- [ ] Advanced Device Control: VID/PID/serial, allowlist and read-only policies
+- [ ] Email DLP
+- [ ] AI DLP / AI Gateway for prompts and uploads
+- [ ] Clipboard and additional controlled channels
+- [ ] Additional classifier packs and policy templates
+- [ ] Multi-admin RBAC for larger environments
+- [ ] Hardened production deployment guidance
+
+---
+
+## What BSC DLP does **not** claim today
+
+To keep the project technically honest:
+
+- it is **not** an EDR/XDR replacement;
+- it does not yet provide Windows kernel pre-write blocking;
+- Email DLP and AI DLP are roadmap modules, not current production capabilities;
+- the local SQLite deployment is a Community/default architecture, not a claim of hyperscale storage;
+- public/Internet deployment requires additional production hardening and TLS architecture.
+
+---
+
+## Contributing
+
+Community contributions are welcome. Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`SECURITY.md`](SECURITY.md).
+
+Useful contribution areas include:
+
+- classifier quality and false-positive reduction;
+- Windows/Linux endpoint telemetry;
+- document parsers;
+- OCR handling;
+- policy/risk logic;
+- tests;
+- internationalization;
+- documentation.
+
+---
+
+## License
+
+BSC DLP Community is distributed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+See [`LICENSE`](LICENSE) for the complete license text.
+
+---
+
+<div align="center">
+  <img src="dashboard/assets/bsc-dlp-icon.png" width="92" alt="BSC DLP" />
+  <br><br>
+  <strong>BSC DLP Community</strong><br>
+  <sub>Detect • Classify • Control • Protect</sub>
+  <br><br>
+  🩷 Open source. Community driven. Built for practical data protection.
+</div>
