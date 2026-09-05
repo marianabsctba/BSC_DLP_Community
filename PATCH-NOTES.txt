@@ -1,20 +1,17 @@
-BSC DLP PowerShell compatibility hotfix
+BSC DLP Community - ICACLS resilience hotfix v2
 
-Purpose:
-- Remove hard dependency on powershell.exe being present in PATH.
-- Support Windows PowerShell 5.1 and PowerShell 7+ (pwsh.exe).
-- Use one central resolver: scripts/windows/Resolve-PowerShell.cmd.
+This version does not depend on an exact text match.
+It locates the existing icacls ACL-hardening block using a tolerant regex,
+creates a backup, and replaces only that block.
 
-Files replaced:
-- START-BSC-DLP.cmd
-- START-BSC-DLP-LAN.cmd
-- STOP-BSC-DLP.cmd
-- RESET-BSC-DLP.cmd
-- INSTALL-ENDPOINT.cmd
-- UNINSTALL-ENDPOINT.cmd
-- TEST-OCR-DOWNLOAD.cmd
+Result:
+- icacls exists -> token ACL hardening is applied.
+- icacls missing/fails -> explicit warning, startup continues.
 
-File added:
-- scripts/windows/Resolve-PowerShell.cmd
+Apply:
+1. Extract into repository root.
+2. Run APPLY-ICACLS-HOTFIX-v2.cmd
+3. Run START-BSC-DLP.cmd
 
-Copy/extract this patch into the repository root and allow replacement of existing files.
+Backup created automatically:
+scripts/windows/Start-Community.ps1.bak-before-icacls-hotfix
