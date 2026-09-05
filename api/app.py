@@ -245,6 +245,7 @@ def seed_default_policies() -> None:
         ("Credentials - Removable Media Block", "CREDENTIAL", "CRITICAL", "BLOCK", "removable", 10),
         ("Credentials - Download Alert", "CREDENTIAL", "HIGH", "ALERT", "download", 30),
         ("CPF - Messaging Alert", "CPF", "HIGH", "ALERT", "messaging", 25),
+        ("CPF-like - Messaging Alert", "CPF_LIKE", "HIGH", "ALERT", "messaging", 30),
         ("CNPJ - Messaging Alert", "CNPJ", "HIGH", "ALERT", "messaging", 25),
         ("Bank Data - Messaging Alert", "BANK_ACCOUNT", "HIGH", "ALERT", "messaging", 20),
         ("PIX - Messaging Alert", "PIX_KEY", "HIGH", "ALERT", "messaging", 20),
@@ -584,6 +585,16 @@ def risk_for_event(
         score += 6
         reasons.append("high_value_extension")
 
+    if "evasive_obfuscation" in tags:
+        score += 10
+        reasons.append("evasion:strong")
+    elif "obfuscated_identifier" in tags:
+        score += 5
+        reasons.append("evasion:obfuscated")
+    if "malformed_identifier" in tags:
+        score += 8
+        reasons.append("evasion:malformed_identifier")
+
     trust = (body.destination_trust or "unknown").strip().lower()
     if trust in {"external", "untrusted"}:
         score += 12
@@ -652,7 +663,7 @@ def incident_key_for_event(body: EventIn, incident_type: str, event_time: dateti
 
 app = FastAPI(
     title="BSC DLP API",
-    version="0.6.2",
+    version="0.6.3",
     description="BSC DLP Community Edition - admin console, risk engine and endpoint enforcement",
     docs_url=None,
     redoc_url=None,
@@ -689,7 +700,7 @@ def health():
     return {
         "status": "ok",
         "engine": "BSC DLP",
-        "version": "0.6.2",
+        "version": "0.6.3",
         "database": "sqlite",
         "server_time_utc": utc_iso(now()),
         "server_time_local": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -2165,9 +2176,18 @@ def capabilities(request: Request):
             "incident_correlation": True,
             "correlation_window_minutes": 5,
         },
-        "optional_custom_examples": ["CEP_BR"],
+        "anti_evasion": {
+            "separator_normalization": True,
+            "zero_width_detection": True,
+            "unicode_digits": True,
+            "number_words": ["pt", "en", "es"],
+            "validated_checksums": ["CPF", "CNPJ", "CREDIT_CARD"],
+            "malformed_cpf_context": True,
+            "whole_document_digit_collapse": False,
+        },
+        "optional_custom_examples": ["CEP_BR", "PHONE_BR"],
         "classifiers": [
-            "CPF", "CNPJ", "CREDIT_CARD", "EMAIL_ADDRESS", "RG_BR", "PHONE_BR",
+            "CPF", "CPF_LIKE", "CNPJ", "CREDIT_CARD", "EMAIL_ADDRESS", "RG_BR",
             "PIX_KEY", "BANK_ACCOUNT", "PASSPORT", "CREDENTIAL", "SECRET"
         ],
         "enforcement": {

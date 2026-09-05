@@ -18,7 +18,6 @@ Authorization: Bearer abcdefghijklmnopqrstuvwxyz123456
 	want := map[string]bool{
 		"EMAIL_ADDRESS": false,
 		"RG_BR":         false,
-		"PHONE_BR":      false,
 		"PIX_KEY":       false,
 		"BANK_ACCOUNT":  false,
 		"PASSPORT":      false,

@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.3 - 2026-09-05
+
+- Novo **Evasion-Resistant Detection Engine** para identificadores sensíveis.
+- CPF/CNPJ/cartão passam por extração local de candidatos + normalização limitada + checksum/Luhn.
+- Detecta separadores incomuns (`#`, `|`, `_`, símbolos), espaçamento excessivo, quebras e caracteres zero-width.
+- Detecta dígitos Unicode comuns e converte para forma canônica antes da validação.
+- Detecta CPF/CNPJ/cartão escritos com números por extenso em PT/EN/ES quando existe contexto explícito.
+- `CPF_LIKE` sinaliza CPF mutilado (10/12 dígitos ou checksum inválido) somente quando existe contexto forte de CPF; padrão em mensageria é ALERT.
+- Novas tags de risco: `obfuscated_identifier`, `evasive_obfuscation`, `malformed_identifier`, `embedded_identifier`.
+- Evasão forte e identificadores malformados aumentam o risk score explicável.
+- `PHONE_BR` deixa de ser classificador nativo e passa a ser exemplo opcional/custom, assim como CEP.
+- O motor **não concatena todos os números de um documento**; a normalização é limitada a janelas locais para reduzir falsos positivos.
+
 ## 0.6.2 - 2026-09-05
 
 - Novo Browser Guard MV3 para WhatsApp Web em Chrome/Edge.

@@ -77,23 +77,29 @@ func buildObjectContext(path, channel string, detections []Detection) ObjectCont
 	}
 	sort.Strings(signals)
 
-	tags := []string{}
-	if len(classes) >= 2 {
-		tags = append(tags, "co_occurrence")
+	tagSet := map[string]bool{}
+	addTag := func(tag string) {
+		tag = strings.TrimSpace(strings.ToLower(tag))
+		if tag != "" { tagSet[tag] = true }
 	}
-	if len(detections) >= 10 {
-		tags = append(tags, "bulk_data")
-	}
-	if len(detections) >= 50 {
-		tags = append(tags, "mass_data")
-	}
-	if len(signals) > 0 {
-		tags = append(tags, "sensitive_filename")
-	}
+
+	if len(classes) >= 2 { addTag("co_occurrence") }
+	if len(detections) >= 10 { addTag("bulk_data") }
+	if len(detections) >= 50 { addTag("mass_data") }
+	if len(signals) > 0 { addTag("sensitive_filename") }
 	highValue := highValueExtensions[strings.ToLower(filepath.Ext(path))]
-	if highValue {
-		tags = append(tags, "high_value_extension")
+	if highValue { addTag("high_value_extension") }
+
+	for _, detection := range detections {
+		evidence := strings.ToLower(detection.Evidence)
+		if strings.Contains(evidence, "obfuscated_identifier") { addTag("obfuscated_identifier") }
+		if strings.Contains(evidence, "evasive_obfuscation") { addTag("evasive_obfuscation") }
+		if strings.Contains(evidence, "malformed_identifier") { addTag("malformed_identifier") }
+		if strings.Contains(evidence, "embedded_identifier") { addTag("embedded_identifier") }
 	}
+
+	tags := make([]string, 0, len(tagSet))
+	for tag := range tagSet { tags = append(tags, tag) }
 	sort.Strings(tags)
 
 	return ObjectContext{

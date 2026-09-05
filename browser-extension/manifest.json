@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BSC DLP Browser Guard",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "Local-first browser DLP protection for outgoing sensitive content.",
   "permissions": ["storage"],
   "host_permissions": ["http://127.0.0.1:8765/*"],
