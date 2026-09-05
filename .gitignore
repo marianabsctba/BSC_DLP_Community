@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+build/
+dist/
+agent/dist/
+data/*.db
+config/enrollment.key
+*.token
+*.log
+.runtime/
+.vscode/
+.idea/
+.pytest_cache/
+*.bak
+*.bak-*
