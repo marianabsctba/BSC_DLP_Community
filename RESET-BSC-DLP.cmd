@@ -1,4 +1,14 @@
 @echo off
 setlocal
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\windows\Reset-Community.ps1"
-if errorlevel 1 pause
+
+call "%~dp0scripts\windows\Resolve-PowerShell.cmd"
+if errorlevel 1 (
+  pause
+  exit /b 1
+)
+
+"%BSC_DLP_POWERSHELL%" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\windows\Reset-Community.ps1"
+if errorlevel 1 (
+  pause
+  exit /b 1
+)
