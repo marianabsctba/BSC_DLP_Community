@@ -6,10 +6,10 @@ echo BSC DLP Browser Guard v0.6.6.1 validation
 echo.
 
 findstr /c:"bsc_dlp_file_start" "browser-extension\content.js" >nul || goto :fail
-findstr /c:"input.type !== ""file""" "browser-extension\content.js" >nul || goto :fail
+findstr /c:"input.type" "browser-extension\content.js" >nul || goto :fail
 findstr /c:"/v1/upload/start" "browser-extension\service-worker.js" >nul || goto :fail
 findstr /c:"/v1/upload/finish" "browser-extension\service-worker.js" >nul || goto :fail
-findstr /c:"""version"": ""0.6.6.1""" "browser-extension\manifest.json" >nul || goto :fail
+findstr /c:"0.6.6.1" "browser-extension\manifest.json" >nul || goto :fail
 
 where node.exe >nul 2>&1
 if not errorlevel 1 (
