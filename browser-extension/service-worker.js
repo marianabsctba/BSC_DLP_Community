@@ -107,6 +107,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       page_url: message.page_url || "",
       event_type: message.event_type || "send",
       browser: navigator.userAgent || "browser-extension",
+      channel: message.channel || "messaging",
       text: message.text || ""
     });
   } else if (message.type === "bsc_dlp_file_start") {

@@ -27,6 +27,7 @@ type BrowserInspectRequest struct {
 	PageURL     string `json:"page_url"`
 	EventType   string `json:"event_type"`
 	Browser     string `json:"browser"`
+	Channel     string `json:"channel"`
 	Text        string `json:"text"`
 }
 
@@ -112,6 +113,14 @@ func normalizeBrowserDestination(value string) string {
 	default:
 		return value
 	}
+}
+
+func normalizeBrowserInspectChannel(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	if value == "ai_prompt" {
+		return "ai_prompt"
+	}
+	return "messaging"
 }
 
 func normalizeBrowserUploadDestination(value string) string {
@@ -567,6 +576,7 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 		body.Text = strings.TrimSpace(body.Text)
 		body.Destination = normalizeBrowserDestination(body.Destination)
 		body.EventType = strings.ToLower(strings.TrimSpace(body.EventType))
+		body.Channel = normalizeBrowserInspectChannel(body.Channel)
 
 		if body.Text == "" {
 			writeBrowserJSON(w, BrowserInspectResponse{Status: "ok", Action: "ALLOW"})
@@ -590,7 +600,7 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 			fingerprint(body.Text),
 			"browser_outgoing_text",
 			"browser_text",
-			"messaging",
+			body.Channel,
 			0,
 			detections,
 		)

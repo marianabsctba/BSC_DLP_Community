@@ -288,6 +288,24 @@ def seed_default_policies() -> None:
         ("Phone - Messaging Alert", "PHONE_BR", "MEDIUM", "ALERT", "messaging", 40),
         ("Secrets - Messaging Block", "SECRET", "CRITICAL", "BLOCK", "messaging", 5),
         ("Credentials - Messaging Block", "CREDENTIAL", "CRITICAL", "BLOCK", "messaging", 5),
+        ("CPF - AI Prompt Block", "CPF", "CRITICAL", "BLOCK", "ai_prompt", 5),
+        ("CPF-like - AI Prompt Alert", "CPF_LIKE", "HIGH", "ALERT", "ai_prompt", 25),
+        ("CNPJ - AI Prompt Alert", "CNPJ", "HIGH", "ALERT", "ai_prompt", 25),
+        ("RG - AI Prompt Alert", "RG_BR", "HIGH", "ALERT", "ai_prompt", 20),
+        ("Passport - AI Prompt Alert", "PASSPORT", "HIGH", "ALERT", "ai_prompt", 20),
+        ("CNH - AI Prompt Alert", "CNH_BR", "HIGH", "ALERT", "ai_prompt", 20),
+        ("CNS - AI Prompt Alert", "CNS_BR", "CRITICAL", "ALERT", "ai_prompt", 15),
+        ("Email - AI Prompt Alert", "EMAIL_ADDRESS", "MEDIUM", "ALERT", "ai_prompt", 40),
+        ("Phone - AI Prompt Alert", "PHONE_BR", "MEDIUM", "ALERT", "ai_prompt", 40),
+        ("Bank Data - AI Prompt Alert", "BANK_ACCOUNT", "HIGH", "ALERT", "ai_prompt", 20),
+        ("PIX - AI Prompt Alert", "PIX_KEY", "HIGH", "ALERT", "ai_prompt", 20),
+        ("Card Data - AI Prompt Block", "CREDIT_CARD", "CRITICAL", "BLOCK", "ai_prompt", 5),
+        ("Card Security Code - AI Prompt Block", "CARD_SECURITY_CODE", "CRITICAL", "BLOCK", "ai_prompt", 1),
+        ("Card PIN - AI Prompt Block", "CARD_PIN", "CRITICAL", "BLOCK", "ai_prompt", 1),
+        ("Card Track Data - AI Prompt Block", "CARD_TRACK_DATA", "CRITICAL", "BLOCK", "ai_prompt", 1),
+        ("Secrets - AI Prompt Block", "SECRET", "CRITICAL", "BLOCK", "ai_prompt", 5),
+        ("Credentials - AI Prompt Block", "CREDENTIAL", "CRITICAL", "BLOCK", "ai_prompt", 5),
+
     ]
     db = SessionLocal()
     try:

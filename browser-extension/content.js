@@ -1,8 +1,286 @@
-﻿(() => {
+(() => {
   "use strict";
 
   const FILE_CHUNK_BYTES = 192 * 1024;
   const WHATSAPP_HOST = "web.whatsapp.com";
+  const AI_SITES = [
+    {
+      host: "chatgpt.com",
+      provider: "openai",
+      destination: "chatgpt"
+    },
+    {
+      host: "chat.openai.com",
+      provider: "openai",
+      destination: "chatgpt"
+    },
+    {
+      host: "claude.ai",
+      provider: "anthropic",
+      destination: "claude"
+    },
+    {
+      host: "gemini.google.com",
+      provider: "google",
+      destination: "gemini"
+    },
+    {
+      host: "copilot.microsoft.com",
+      provider: "microsoft",
+      destination: "copilot"
+    }
+  ];
+
+  function aiSiteForHost(hostname = location.hostname) {
+    const host = String(hostname || "").trim().toLowerCase();
+
+    for (const site of AI_SITES) {
+      if (host === site.host || host.endsWith(`.${site.host}`)) {
+        return site;
+      }
+    }
+
+    return null;
+  }
+
+  function isAIDestination() {
+    return Boolean(aiSiteForHost());
+  }
+
+  function aiDestination() {
+    return aiSiteForHost()?.destination || "";
+  }
+
+  function aiProvider() {
+    return aiSiteForHost()?.provider || "";
+  }
+
+  let aiSendBypass = false;
+  let aiInspectionPending = false;
+
+  function visibleElement(node) {
+    if (!(node instanceof Element)) return false;
+    const rect = node.getBoundingClientRect();
+    return rect.width > 0 && rect.height > 0;
+  }
+
+  function chatGPTComposer() {
+    const selectors = [
+      "#prompt-textarea",
+      'textarea[data-testid="prompt-textarea"]',
+      '[contenteditable="true"][data-testid="prompt-textarea"]',
+      '[contenteditable="true"][role="textbox"]',
+      "textarea"
+    ];
+
+    for (const selector of selectors) {
+      const nodes = document.querySelectorAll(selector);
+
+      for (const node of nodes) {
+        if (visibleElement(node)) return node;
+      }
+    }
+
+    return null;
+  }
+
+  function composerValue(node) {
+    if (!node) return "";
+
+    if (node instanceof HTMLTextAreaElement ||
+        node instanceof HTMLInputElement) {
+      return String(node.value || "").trim();
+    }
+
+    return String(node.innerText || node.textContent || "").trim();
+  }
+
+  function chatGPTSendButton() {
+    const selectors = [
+      'button[data-testid="send-button"]',
+      'button[aria-label="Send prompt"]',
+      'button[aria-label="Send"]',
+      'button[aria-label="Enviar prompt"]',
+      'button[aria-label="Enviar"]'
+    ];
+
+    for (const selector of selectors) {
+      const button = document.querySelector(selector);
+
+      if (button instanceof HTMLButtonElement &&
+          visibleElement(button)) {
+        return button;
+      }
+    }
+
+    const composer = chatGPTComposer();
+    const form = composer?.closest("form");
+
+    if (form) {
+      const submit = form.querySelector('button[type="submit"]');
+
+      if (submit instanceof HTMLButtonElement &&
+          visibleElement(submit)) {
+        return submit;
+      }
+    }
+
+    return null;
+  }
+
+  function isChatGPTComposerTarget(node) {
+    const composer = chatGPTComposer();
+
+    if (!composer || !(node instanceof Node)) return false;
+
+    return node === composer ||
+      (composer instanceof Element && composer.contains(node));
+  }
+
+  async function inspectAIPrompt(text, eventType) {
+    const result = await runtimeMessage({
+      type: "bsc_dlp_inspect",
+      destination: aiDestination(),
+      page_url: pageURL(),
+      event_type: eventType,
+      channel: "ai_prompt",
+      provider: aiProvider(),
+      text
+    });
+
+    if (!result.ok) {
+      return {
+        available: false,
+        block: false,
+        action: "ALLOW",
+        classifications: [],
+        reason: result.error || "bridge_unavailable"
+      };
+    }
+
+    const data = result.data || {};
+
+    return {
+      available: true,
+      block: Boolean(data.block),
+      action: String(data.action || "ALLOW").toUpperCase(),
+      classifications: Array.isArray(data.classifications)
+        ? data.classifications
+        : [],
+      reason: String(data.reason || "")
+    };
+  }
+
+  async function guardChatGPTPrompt(eventType, replaySend) {
+    if (aiInspectionPending) return;
+
+    const composer = chatGPTComposer();
+    const text = composerValue(composer);
+
+    if (!text) {
+      replaySend();
+      return;
+    }
+
+    aiInspectionPending = true;
+
+    try {
+      const result = await inspectAIPrompt(text, eventType);
+
+      if (!result.available) {
+        toast(
+          "BSC DLP AI Gateway: agente local indispon?vel; prompt liberado (fail-open)."
+        );
+
+        replaySend();
+        return;
+      }
+
+      if (result.block) {
+        toast(
+          `BSC DLP AI Gateway bloqueou o envio do prompt para ChatGPT${classificationLabel(result.classifications)}.`,
+          true
+        );
+        return;
+      }
+
+      if (result.action === "ALERT") {
+        toast(
+          `BSC DLP AI Gateway detectou conte?do sens?vel no prompt para ChatGPT${classificationLabel(result.classifications)}.`
+        );
+      }
+
+      replaySend();
+    } finally {
+      aiInspectionPending = false;
+    }
+  }
+
+  function replayChatGPTSend(button) {
+    if (!(button instanceof HTMLButtonElement)) return;
+
+    aiSendBypass = true;
+    button.click();
+  }
+
+  if (aiDestination() === "chatgpt") {
+
+    document.addEventListener("click", async event => {
+      const clicked = event.target instanceof Element
+        ? event.target.closest("button")
+        : null;
+
+      if (!(clicked instanceof HTMLButtonElement)) return;
+
+      if (aiSendBypass) {
+        aiSendBypass = false;
+        return;
+      }
+
+      const send = chatGPTSendButton();
+
+      if (!send || clicked !== send) return;
+
+      const prompt = composerValue(chatGPTComposer());
+      if (!prompt) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardChatGPTPrompt(
+        "prompt_submit_click",
+        () => replayChatGPTSend(send)
+      );
+    }, true);
+
+
+    document.addEventListener("keydown", async event => {
+      if (event.key !== "Enter") return;
+      if (event.shiftKey) return;
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.isComposing) return;
+
+      if (!isChatGPTComposerTarget(event.target)) return;
+
+      const prompt = composerValue(chatGPTComposer());
+      if (!prompt) return;
+
+      const send = chatGPTSendButton();
+
+      // Sem bot?o confi?vel, n?o impedimos o site de funcionar.
+      if (!send || send.disabled) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardChatGPTPrompt(
+        "prompt_submit_enter",
+        () => replayChatGPTSend(send)
+      );
+    }, true);
+  }
+
+
 
   const bypassChange = new WeakSet();
   let replayingDrop = false;
@@ -579,5 +857,758 @@
   }
 
   console.info(`[BSC DLP] Browser Guard v0.6.7 active: generic upload DLP on ${uploadDestination()}`);
+
+  // ==========================================================
+  // AI Gateway - Claude adapter
+  // ==========================================================
+
+  function claudeComposer() {
+    const selectors = [
+      '[data-testid="chat-input"][contenteditable="true"]',
+      '[data-testid="chat-input"] [contenteditable="true"]',
+      'div.tiptap.ProseMirror[contenteditable="true"]',
+      '.ProseMirror.remirror-editor[contenteditable="true"]',
+      '.ProseMirror[contenteditable="true"]',
+      '[contenteditable="true"][role="textbox"]'
+    ];
+
+    for (const selector of selectors) {
+      const nodes = document.querySelectorAll(selector);
+
+      for (const node of nodes) {
+        if (visibleElement(node)) {
+          return node;
+        }
+      }
+    }
+
+    return null;
+  }
+
+
+  function claudeSendButton() {
+    const composer = claudeComposer();
+    const form = composer?.closest("form");
+
+    const selectors = [
+      'button[data-testid="send-button"]',
+      'button[aria-label="Send message"]',
+      'button[aria-label="Send Message"]',
+      'button[aria-label="Send"]',
+      'button[aria-label="Enviar"]',
+      'button[aria-label*="send" i]',
+      'button[aria-label*="enviar" i]',
+      'button[type="submit"]'
+    ];
+
+    const roots = [];
+
+    if (form) roots.push(form);
+    roots.push(document);
+
+    for (const root of roots) {
+      for (const selector of selectors) {
+        const buttons = root.querySelectorAll(selector);
+
+        for (const button of buttons) {
+          if (button instanceof HTMLButtonElement &&
+              visibleElement(button) &&
+              !button.disabled &&
+              button.getAttribute("aria-disabled") !== "true") {
+            return button;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+
+  function isClaudeComposerTarget(node) {
+    const composer = claudeComposer();
+
+    if (!composer || !(node instanceof Node)) return false;
+
+    return node === composer ||
+      (composer instanceof Element && composer.contains(node));
+  }
+
+
+  let claudeSubmitBypass = false;
+
+  function replayClaudeSend(button) {
+    if (!(button instanceof HTMLButtonElement)) return;
+
+    aiSendBypass = true;
+    claudeSubmitBypass = true;
+    button.click();
+  }
+
+
+  async function guardClaudePrompt(eventType, replaySend) {
+    if (aiInspectionPending) return;
+
+    const composer = claudeComposer();
+    const text = composerValue(composer);
+
+    if (!text) {
+      replaySend();
+      return;
+    }
+
+    aiInspectionPending = true;
+
+    try {
+      const result = await inspectAIPrompt(text, eventType);
+
+      if (!result.available) {
+        toast(
+          "BSC DLP AI Gateway: agente local indispon?vel; prompt liberado (fail-open)."
+        );
+
+        replaySend();
+        return;
+      }
+
+      if (result.block) {
+        toast(
+          `BSC DLP AI Gateway bloqueou o envio do prompt para Claude${classificationLabel(result.classifications)}.`,
+          true
+        );
+        return;
+      }
+
+      if (result.action === "ALERT") {
+        toast(
+          `BSC DLP AI Gateway detectou conte?do sens?vel no prompt para Claude${classificationLabel(result.classifications)}.`
+        );
+      }
+
+      replaySend();
+
+    } finally {
+      aiInspectionPending = false;
+    }
+  }
+
+
+  if (aiDestination() === "claude") {
+
+    document.addEventListener("submit", async event => {
+      if (!(event.target instanceof HTMLFormElement)) return;
+
+      const composer = claudeComposer();
+      if (!composer || !event.target.contains(composer)) return;
+
+      if (claudeSubmitBypass) {
+        claudeSubmitBypass = false;
+        return;
+      }
+
+      const prompt = composerValue(composer);
+      if (!prompt) return;
+
+      const send = claudeSendButton();
+      if (!send) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardClaudePrompt(
+        "prompt_submit_form",
+        () => replayClaudeSend(send)
+      );
+    }, true);
+
+
+    document.addEventListener("click", async event => {
+      const clicked = event.target instanceof Element
+        ? event.target.closest("button")
+        : null;
+
+      if (!(clicked instanceof HTMLButtonElement)) return;
+
+      if (aiSendBypass) {
+        aiSendBypass = false;
+        return;
+      }
+
+      const composer = claudeComposer();
+      if (!composer) return;
+
+      const form = composer.closest("form");
+      const send = claudeSendButton();
+
+      const label = String(clicked.getAttribute("aria-label") || "").toLowerCase();
+
+      const looksLikeSend =
+        clicked === send ||
+        Boolean(
+          form &&
+          form.contains(clicked) &&
+          (
+            clicked.type === "submit" ||
+            label.includes("send") ||
+            label.includes("enviar")
+          )
+        );
+
+      if (!looksLikeSend) return;
+
+      const prompt = composerValue(composer);
+      if (!prompt) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardClaudePrompt(
+        "prompt_submit_click",
+        () => replayClaudeSend(clicked)
+      );
+
+    }, true);
+
+
+    document.addEventListener("keydown", async event => {
+      if (event.key !== "Enter") return;
+      if (event.shiftKey) return;
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.isComposing) return;
+
+      if (!isClaudeComposerTarget(event.target)) return;
+
+      const prompt = composerValue(claudeComposer());
+
+      if (!prompt) return;
+
+      const send = claudeSendButton();
+
+      if (!send || send.disabled) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardClaudePrompt(
+        "prompt_submit_enter",
+        () => replayClaudeSend(send)
+      );
+
+    }, true);
+  }
+
+
+  // ==========================================================
+  // AI Gateway - Gemini adapter
+  // ==========================================================
+
+  function geminiComposer() {
+    const selectors = [
+      '.ql-editor.textarea[contenteditable="true"]',
+      '.ql-editor[contenteditable="true"]',
+      'rich-textarea [contenteditable="true"]',
+      '[aria-label="Enter a prompt here"][contenteditable="true"]',
+      '[contenteditable="true"][role="textbox"]'
+    ];
+
+    for (const selector of selectors) {
+      const nodes = document.querySelectorAll(selector);
+
+      for (const node of nodes) {
+        if (!visibleElement(node)) continue;
+
+        const rect = node.getBoundingClientRect();
+
+        if (rect.width < 200 || rect.height < 20) continue;
+
+        return node;
+      }
+    }
+
+    return null;
+  }
+
+
+  function geminiSendButton() {
+    const composer = geminiComposer();
+    const form = composer?.closest("form");
+
+    const selectors = [
+      'button[aria-label="Send message"]',
+      'button[aria-label*="Send" i]',
+      'button[aria-label*="Enviar" i]',
+      'button[mattooltip*="Send" i]',
+      'button.send-button',
+      '.send-button button',
+      'button[type="submit"]'
+    ];
+
+    const roots = [];
+
+    if (form) roots.push(form);
+
+    if (composer?.parentElement) {
+      roots.push(composer.parentElement);
+
+      if (composer.parentElement.parentElement) {
+        roots.push(composer.parentElement.parentElement);
+      }
+
+      if (composer.parentElement.parentElement?.parentElement) {
+        roots.push(composer.parentElement.parentElement.parentElement);
+      }
+    }
+
+    roots.push(document);
+
+    for (const root of roots) {
+      for (const selector of selectors) {
+        const buttons = root.querySelectorAll(selector);
+
+        for (const button of buttons) {
+          if (button instanceof HTMLButtonElement &&
+              visibleElement(button) &&
+              !button.disabled &&
+              button.getAttribute("aria-disabled") !== "true") {
+            return button;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+
+  function isGeminiComposerTarget(node) {
+    const composer = geminiComposer();
+
+    if (!composer || !(node instanceof Node)) return false;
+
+    return node === composer ||
+      (composer instanceof Element && composer.contains(node));
+  }
+
+
+  let geminiSubmitBypass = false;
+
+  function replayGeminiSend(button) {
+    if (!(button instanceof HTMLButtonElement)) return;
+
+    aiSendBypass = true;
+    geminiSubmitBypass = true;
+
+    try {
+      button.click();
+    } finally {
+      geminiSubmitBypass = false;
+    }
+  }
+
+
+  async function guardGeminiPrompt(eventType, replaySend) {
+    if (aiInspectionPending) return;
+
+    const composer = geminiComposer();
+    const text = composerValue(composer);
+
+    if (!text) {
+      replaySend();
+      return;
+    }
+
+    aiInspectionPending = true;
+
+    try {
+      const result = await inspectAIPrompt(text, eventType);
+
+      if (!result.available) {
+        toast(
+          "BSC DLP AI Gateway: agente local indispon?vel; prompt liberado (fail-open)."
+        );
+
+        replaySend();
+        return;
+      }
+
+      if (result.block) {
+        toast(
+          `BSC DLP AI Gateway bloqueou o envio do prompt para Gemini${classificationLabel(result.classifications)}.`,
+          true
+        );
+        return;
+      }
+
+      if (result.action === "ALERT") {
+        toast(
+          `BSC DLP AI Gateway detectou conte?do sens?vel no prompt para Gemini${classificationLabel(result.classifications)}.`
+        );
+      }
+
+      replaySend();
+
+    } finally {
+      aiInspectionPending = false;
+    }
+  }
+
+
+  if (aiDestination() === "gemini") {
+
+    document.addEventListener("submit", async event => {
+      if (!(event.target instanceof HTMLFormElement)) return;
+
+      const composer = geminiComposer();
+
+      if (!composer || !event.target.contains(composer)) return;
+
+      if (geminiSubmitBypass) return;
+
+      const prompt = composerValue(composer);
+      if (!prompt) return;
+
+      const send = geminiSendButton();
+      if (!send) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardGeminiPrompt(
+        "prompt_submit_form",
+        () => replayGeminiSend(send)
+      );
+
+    }, true);
+
+
+    document.addEventListener("click", async event => {
+      const clicked = event.target instanceof Element
+        ? event.target.closest("button")
+        : null;
+
+      if (!(clicked instanceof HTMLButtonElement)) return;
+
+      if (aiSendBypass) {
+        aiSendBypass = false;
+        return;
+      }
+
+      const composer = geminiComposer();
+      if (!composer) return;
+
+      const send = geminiSendButton();
+
+      const label = String(
+        clicked.getAttribute("aria-label") || ""
+      ).toLowerCase();
+
+      const tooltip = String(
+        clicked.getAttribute("mattooltip") || ""
+      ).toLowerCase();
+
+      const looksLikeSend =
+        clicked === send ||
+        label.includes("send") ||
+        label.includes("enviar") ||
+        tooltip.includes("send");
+
+      if (!looksLikeSend) return;
+
+      const prompt = composerValue(composer);
+      if (!prompt) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardGeminiPrompt(
+        "prompt_submit_click",
+        () => replayGeminiSend(clicked)
+      );
+
+    }, true);
+
+
+    document.addEventListener("keydown", async event => {
+      if (event.key !== "Enter") return;
+      if (event.shiftKey) return;
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.isComposing) return;
+
+      if (!isGeminiComposerTarget(event.target)) return;
+
+      const prompt = composerValue(geminiComposer());
+      if (!prompt) return;
+
+      const send = geminiSendButton();
+
+      // Sem bot?o confi?vel, n?o quebramos o funcionamento do Gemini.
+      if (!send || send.disabled) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardGeminiPrompt(
+        "prompt_submit_enter",
+        () => replayGeminiSend(send)
+      );
+
+    }, true);
+  }
+
+
+  // ==========================================================
+  // AI Gateway - Microsoft Copilot adapter
+  // ==========================================================
+
+  function copilotComposer() {
+    const selectors = [
+      "textarea#userInput",
+      'textarea[placeholder="Message Copilot"]',
+      'textarea[placeholder*="Copilot" i]',
+      'textarea[placeholder*="Ask" i]',
+      'textarea[aria-label*="Copilot" i]',
+      'textarea',
+      '[contenteditable="true"][role="textbox"]'
+    ];
+
+    for (const selector of selectors) {
+      const nodes = document.querySelectorAll(selector);
+
+      for (const node of nodes) {
+        if (!visibleElement(node)) continue;
+
+        const rect = node.getBoundingClientRect();
+
+        if (rect.width < 200 || rect.height < 20) continue;
+
+        return node;
+      }
+    }
+
+    return null;
+  }
+
+
+  function copilotSendButton() {
+    const composer = copilotComposer();
+    const form = composer?.closest("form");
+
+    const selectors = [
+      'button[aria-label="Submit message"]',
+      'button[aria-label*="Submit message" i]',
+      'button[aria-label*="Send" i]',
+      'button[aria-label*="Enviar" i]',
+      'button[data-testid="send-button"]',
+      'button[type="submit"]'
+    ];
+
+    const roots = [];
+
+    if (form) roots.push(form);
+
+    if (composer?.parentElement) {
+      roots.push(composer.parentElement);
+
+      if (composer.parentElement.parentElement) {
+        roots.push(composer.parentElement.parentElement);
+      }
+
+      if (composer.parentElement.parentElement?.parentElement) {
+        roots.push(composer.parentElement.parentElement.parentElement);
+      }
+    }
+
+    roots.push(document);
+
+    for (const root of roots) {
+      for (const selector of selectors) {
+        const buttons = root.querySelectorAll(selector);
+
+        for (const button of buttons) {
+          if (button instanceof HTMLButtonElement &&
+              visibleElement(button) &&
+              !button.disabled &&
+              button.getAttribute("aria-disabled") !== "true") {
+            return button;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+
+  function isCopilotComposerTarget(node) {
+    const composer = copilotComposer();
+
+    if (!composer || !(node instanceof Node)) return false;
+
+    return node === composer ||
+      (composer instanceof Element && composer.contains(node));
+  }
+
+
+  let copilotSubmitBypass = false;
+
+  function replayCopilotSend(button) {
+    if (!(button instanceof HTMLButtonElement)) return;
+
+    aiSendBypass = true;
+    copilotSubmitBypass = true;
+
+    try {
+      button.click();
+    } finally {
+      copilotSubmitBypass = false;
+    }
+  }
+
+
+  async function guardCopilotPrompt(eventType, replaySend) {
+    if (aiInspectionPending) return;
+
+    const composer = copilotComposer();
+    const text = composerValue(composer);
+
+    if (!text) {
+      replaySend();
+      return;
+    }
+
+    aiInspectionPending = true;
+
+    try {
+      const result = await inspectAIPrompt(text, eventType);
+
+      if (!result.available) {
+        toast(
+          "BSC DLP AI Gateway: agente local indispon?vel; prompt liberado (fail-open)."
+        );
+
+        replaySend();
+        return;
+      }
+
+      if (result.block) {
+        toast(
+          `BSC DLP AI Gateway bloqueou o envio do prompt para Copilot${classificationLabel(result.classifications)}.`,
+          true
+        );
+        return;
+      }
+
+      if (result.action === "ALERT") {
+        toast(
+          `BSC DLP AI Gateway detectou conte?do sens?vel no prompt para Copilot${classificationLabel(result.classifications)}.`
+        );
+      }
+
+      replaySend();
+
+    } finally {
+      aiInspectionPending = false;
+    }
+  }
+
+
+  if (aiDestination() === "copilot") {
+
+    document.addEventListener("submit", async event => {
+      if (!(event.target instanceof HTMLFormElement)) return;
+
+      const composer = copilotComposer();
+
+      if (!composer || !event.target.contains(composer)) return;
+
+      if (copilotSubmitBypass) return;
+
+      const prompt = composerValue(composer);
+      if (!prompt) return;
+
+      const send = copilotSendButton();
+      if (!send) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardCopilotPrompt(
+        "prompt_submit_form",
+        () => replayCopilotSend(send)
+      );
+
+    }, true);
+
+
+    document.addEventListener("click", async event => {
+      const clicked = event.target instanceof Element
+        ? event.target.closest("button")
+        : null;
+
+      if (!(clicked instanceof HTMLButtonElement)) return;
+
+      if (aiSendBypass) {
+        aiSendBypass = false;
+        return;
+      }
+
+      const composer = copilotComposer();
+      if (!composer) return;
+
+      const send = copilotSendButton();
+
+      const label = String(
+        clicked.getAttribute("aria-label") || ""
+      ).toLowerCase();
+
+      const looksLikeSend =
+        clicked === send ||
+        label.includes("submit message") ||
+        label.includes("send") ||
+        label.includes("enviar") ||
+        clicked.type === "submit";
+
+      if (!looksLikeSend) return;
+
+      const prompt = composerValue(composer);
+      if (!prompt) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardCopilotPrompt(
+        "prompt_submit_click",
+        () => replayCopilotSend(clicked)
+      );
+
+    }, true);
+
+
+    document.addEventListener("keydown", async event => {
+      if (event.key !== "Enter") return;
+      if (event.shiftKey) return;
+      if (event.ctrlKey || event.altKey || event.metaKey) return;
+      if (event.isComposing) return;
+
+      if (!isCopilotComposerTarget(event.target)) return;
+
+      const prompt = composerValue(copilotComposer());
+      if (!prompt) return;
+
+      const send = copilotSendButton();
+
+      if (!send || send.disabled) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardCopilotPrompt(
+        "prompt_submit_enter",
+        () => replayCopilotSend(send)
+      );
+
+    }, true);
+  }
+
 })();
 
