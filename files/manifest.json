@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "BSC DLP Browser Guard",
-  "version": "0.6.6.1",
+  "version": "0.6.6.2",
   "description": "Local-first browser DLP for outgoing text and generic file uploads.",
   "permissions": [
     "storage"
@@ -10,6 +10,9 @@
     "http://127.0.0.1:8765/*"
   ],
   "background": {
+    "scripts": [
+      "service-worker.js"
+    ],
     "service_worker": "service-worker.js"
   },
   "content_scripts": [
