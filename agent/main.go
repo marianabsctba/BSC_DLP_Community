@@ -21,7 +21,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-const version = "0.6.6.3"
+const version = "0.6.7"
 
 var recentEvents = map[string]time.Time{}
 var recentEventsMu sync.Mutex
@@ -60,6 +60,7 @@ type Event struct {
 	Process             string   `json:"process,omitempty"`
 	ObjectPath          string   `json:"object_path,omitempty"`
 	ObjectHash          string   `json:"object_hash,omitempty"`
+	ObjectSizeBytes     int64    `json:"object_size_bytes,omitempty"`
 	Classification      string   `json:"classification"`
 	Severity            string   `json:"severity"`
 	Action              string   `json:"action"`
@@ -395,6 +396,10 @@ func inspect(path, api, endpointID, hostname, username, channel string) {
 
 	objectContext := buildObjectContext(path, channel, detections)
 	objectHash := fileHash(path)
+	objectSizeBytes := int64(0)
+	if info, statErr := os.Stat(path); statErr == nil && !info.IsDir() {
+		objectSizeBytes = info.Size()
+	}
 	blockedByClassification := map[string]bool{}
 	enforcementEvidence := map[string]string{}
 	policyByClassification := map[string]PolicyDecision{}
@@ -467,6 +472,7 @@ func inspect(path, api, endpointID, hostname, username, channel string) {
 			Process:             "bsc-dlp-agent",
 			ObjectPath:          path,
 			ObjectHash:          objectHash,
+			ObjectSizeBytes:     objectSizeBytes,
 			Classification:      detection.Classification,
 			Severity:            decision.Severity,
 			Action:              decision.Action,

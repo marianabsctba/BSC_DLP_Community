@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 
 from datetime import datetime, timedelta, timezone
 import csv
@@ -179,6 +179,7 @@ class Event(Base):
     process = Column(String(255))
     object_path = Column(Text)
     object_hash = Column(String(128))
+    object_size_bytes = Column(Integer, default=0)
     classification = Column(String(128), index=True)
     severity = Column(String(32), index=True)
     action = Column(String(32), index=True)
@@ -215,6 +216,7 @@ def migrate_sqlite() -> None:
         "incident_type": "VARCHAR(128)",
         "incident_key": "VARCHAR(64)",
         "document_type": "VARCHAR(64)",
+        "object_size_bytes": "INTEGER DEFAULT 0",
         "detection_count": "INTEGER DEFAULT 1",
         "classification_count": "INTEGER DEFAULT 1",
         "context_tags": "TEXT",
@@ -362,6 +364,7 @@ class EventIn(BaseModel):
     process: Optional[str] = None
     object_path: Optional[str] = None
     object_hash: Optional[str] = None
+    object_size_bytes: int = Field(default=0, ge=0)
     classification: str
     severity: str
     action: str
@@ -562,6 +565,8 @@ def risk_for_event(
     body: EventIn,
     recent_count: int,
     recent_object_count: int = 0,
+    transfer_object_count: int = 0,
+    transfer_bytes: int = 0,
 ) -> tuple[int, str, list[str]]:
     reasons: list[str] = []
     severity = body.severity.upper()
@@ -668,9 +673,42 @@ def risk_for_event(
         score += 5
         reasons.append("objects:3+")
 
+    exfil_channel = channel in {"removable", "browser_upload"}
+    if exfil_channel:
+        if transfer_object_count >= 100:
+            score += 25
+            reasons.append("transfer_objects:100+")
+        elif transfer_object_count >= 25:
+            score += 15
+            reasons.append("transfer_objects:25+")
+        elif transfer_object_count >= 10:
+            score += 8
+            reasons.append("transfer_objects:10+")
+
+        mib = 1024 * 1024
+        gib = 1024 * mib
+        if transfer_bytes >= gib:
+            score += 25
+            reasons.append("transfer_volume:1GiB+")
+        elif transfer_bytes >= 250 * mib:
+            score += 18
+            reasons.append("transfer_volume:250MiB+")
+        elif transfer_bytes >= 50 * mib:
+            score += 10
+            reasons.append("transfer_volume:50MiB+")
+        elif transfer_bytes >= 10 * mib:
+            score += 5
+            reasons.append("transfer_volume:10MiB+")
+
     score = min(score, 100)
 
-    if channel == "browser_guard" and body.classification.upper() == "BROWSER_GUARD_DISABLED_OR_MISSING":
+    if exfil_channel and (transfer_object_count >= 100 or transfer_bytes >= 1024 * 1024 * 1024):
+        incident = "MASS_FILE_EXFILTRATION"
+    elif exfil_channel and (transfer_object_count >= 25 or transfer_bytes >= 250 * 1024 * 1024):
+        incident = "HIGH_VOLUME_FILE_EXFILTRATION"
+    elif exfil_channel and (transfer_object_count >= 10 or transfer_bytes >= 50 * 1024 * 1024):
+        incident = "BULK_FILE_EXFILTRATION"
+    elif channel == "browser_guard" and body.classification.upper() == "BROWSER_GUARD_DISABLED_OR_MISSING":
         incident = "Browser Guard protection disabled or missing"
     elif channel == "browser_guard" and body.classification.upper() == "BROWSER_GUARD_RESTORED":
         incident = "Browser Guard protection restored"
@@ -718,7 +756,7 @@ def incident_key_for_event(body: EventIn, incident_type: str, event_time: dateti
 
 app = FastAPI(
     title="BSC DLP API",
-    version="0.6.6.3",
+    version="0.6.7",
     description="BSC DLP Community Edition - admin console, risk engine and endpoint enforcement",
     docs_url=None,
     redoc_url=None,
@@ -755,7 +793,7 @@ def health():
     return {
         "status": "ok",
         "engine": "BSC DLP",
-        "version": "0.6.6.3",
+        "version": "0.6.7",
         "database": "sqlite",
         "server_time_utc": utc_iso(now()),
         "server_time_local": datetime.now().astimezone().isoformat(timespec="seconds"),
@@ -1226,8 +1264,33 @@ def create_event(body: EventIn, authorization: Optional[str] = Header(default=No
             row.object_hash or row.object_path or row.event_id
             for row in recent_rows
         })
+
+        transfer_object_count = 0
+        transfer_bytes = 0
+        channel = body.channel.lower()
+        if channel in {"removable", "browser_upload"}:
+            object_sizes: dict[str, int] = {}
+            for row in recent_rows:
+                if (row.channel or "").lower() != channel:
+                    continue
+                if body.destination and row.destination and row.destination != body.destination:
+                    continue
+                key = row.object_hash or row.object_path or row.event_id
+                size = max(int(row.object_size_bytes or 0), 0)
+                object_sizes[key] = max(object_sizes.get(key, 0), size)
+
+            current_key = body.object_hash or body.object_path or body.event_id
+            current_size = max(int(body.object_size_bytes or 0), 0)
+            object_sizes[current_key] = max(object_sizes.get(current_key, 0), current_size)
+            transfer_object_count = len(object_sizes)
+            transfer_bytes = sum(object_sizes.values())
+
         risk_score, incident_type, risk_reasons = risk_for_event(
-            body, recent_count, recent_object_count
+            body,
+            recent_count,
+            recent_object_count,
+            transfer_object_count,
+            transfer_bytes,
         )
         incident_key = incident_key_for_event(body, incident_type, event_time)
         event = Event(
@@ -1239,6 +1302,7 @@ def create_event(body: EventIn, authorization: Optional[str] = Header(default=No
             process=body.process,
             object_path=body.object_path,
             object_hash=body.object_hash,
+            object_size_bytes=body.object_size_bytes,
             classification=body.classification.upper(),
             severity=body.severity.upper(),
             action=body.action.upper(),
@@ -1271,6 +1335,8 @@ def create_event(body: EventIn, authorization: Optional[str] = Header(default=No
             "incident_type": incident_type,
             "incident_key": incident_key,
             "risk_reasons": risk_reasons,
+            "transfer_object_count": transfer_object_count,
+            "transfer_bytes": transfer_bytes,
         }
     finally:
         db.close()
@@ -1299,6 +1365,7 @@ def serialize_event(r: Event) -> dict:
         "process": r.process,
         "object_path": r.object_path,
         "object_hash": r.object_hash,
+        "object_size_bytes": int(r.object_size_bytes or 0),
         "classification": r.classification,
         "severity": r.severity,
         "action": r.action,
@@ -1640,19 +1707,19 @@ def _report_object_name(path_value) -> str:
 
 REPORT_I18N = {
     "pt": {
-        "title": "Relatório de Proteção de Dados", "subtitle": "Relatório de Proteção de Dados - Community Edition",
-        "subject": "Relatório administrativo de Data Loss Prevention", "period": "Período", "generated": "Gerado em",
-        "administrator": "Administrador", "filters": "Filtros", "start": "início", "now": "agora", "no_filters": "Sem filtros adicionais",
-        "endpoint": "Endpoint", "classification": "Classificação", "channel": "Canal", "severity": "Severidade", "action": "Ação",
-        "blocked": "Bloqueado", "min_risk": "Risco mínimo", "search": "Busca", "events": "Eventos", "incidents": "Incidentes",
-        "blocks": "Bloqueios", "endpoints": "Endpoints", "max_risk": "Risco max.", "distribution": "Distribuição",
-        "occurrences": "Ocorrências", "no_data": "Sem dados", "date": "Data", "risk": "Risco", "user": "Usuário",
-        "blocked_short": "Bloq.", "document": "Documento", "object": "Objeto", "yes": "SIM", "no": "NÃO",
+        "title": "RelatÃ³rio de ProteÃ§Ã£o de Dados", "subtitle": "RelatÃ³rio de ProteÃ§Ã£o de Dados - Community Edition",
+        "subject": "RelatÃ³rio administrativo de Data Loss Prevention", "period": "PerÃ­odo", "generated": "Gerado em",
+        "administrator": "Administrador", "filters": "Filtros", "start": "inÃ­cio", "now": "agora", "no_filters": "Sem filtros adicionais",
+        "endpoint": "Endpoint", "classification": "ClassificaÃ§Ã£o", "channel": "Canal", "severity": "Severidade", "action": "AÃ§Ã£o",
+        "blocked": "Bloqueado", "min_risk": "Risco mÃ­nimo", "search": "Busca", "events": "Eventos", "incidents": "Incidentes",
+        "blocks": "Bloqueios", "endpoints": "Endpoints", "max_risk": "Risco max.", "distribution": "DistribuiÃ§Ã£o",
+        "occurrences": "OcorrÃªncias", "no_data": "Sem dados", "date": "Data", "risk": "Risco", "user": "UsuÃ¡rio",
+        "blocked_short": "Bloq.", "document": "Documento", "object": "Objeto", "yes": "SIM", "no": "NÃƒO",
         "no_events": "Nenhum evento para os filtros selecionados.",
-        "detail_limit": "O resumo considera {total} eventos. A tabela detalhada foi limitada aos {limit} eventos mais recentes para manter o PDF utilizável.",
-        "privacy": "Privacidade: o relatório não inclui valores sensíveis em claro. Dados detectados permanecem mascarados/fingerprinted no BSC DLP.",
-        "footer": "BSC DLP Community - Relatório administrativo", "page": "Página", "print": "Imprimir / Salvar como PDF",
-        "classifications": "Classificações", "report_heading": "BSC DLP — Relatório de Proteção de Dados"
+        "detail_limit": "O resumo considera {total} eventos. A tabela detalhada foi limitada aos {limit} eventos mais recentes para manter o PDF utilizÃ¡vel.",
+        "privacy": "Privacidade: o relatÃ³rio nÃ£o inclui valores sensÃ­veis em claro. Dados detectados permanecem mascarados/fingerprinted no BSC DLP.",
+        "footer": "BSC DLP Community - RelatÃ³rio administrativo", "page": "PÃ¡gina", "print": "Imprimir / Salvar como PDF",
+        "classifications": "ClassificaÃ§Ãµes", "report_heading": "BSC DLP â€” RelatÃ³rio de ProteÃ§Ã£o de Dados"
     },
     "en": {
         "title": "Data Protection Report", "subtitle": "Data Protection Report - Community Edition",
@@ -1667,22 +1734,22 @@ REPORT_I18N = {
         "detail_limit": "The summary includes {total} events. The detailed table was limited to the {limit} most recent events to keep the PDF usable.",
         "privacy": "Privacy: the report does not include sensitive values in clear text. Detected data remains masked/fingerprinted in BSC DLP.",
         "footer": "BSC DLP Community - Administrative report", "page": "Page", "print": "Print / Save as PDF",
-        "classifications": "Classifications", "report_heading": "BSC DLP — Data Protection Report"
+        "classifications": "Classifications", "report_heading": "BSC DLP â€” Data Protection Report"
     },
     "es": {
-        "title": "Informe de Protección de Datos", "subtitle": "Informe de Protección de Datos - Community Edition",
-        "subject": "Informe administrativo de Data Loss Prevention", "period": "Período", "generated": "Generado el",
+        "title": "Informe de ProtecciÃ³n de Datos", "subtitle": "Informe de ProtecciÃ³n de Datos - Community Edition",
+        "subject": "Informe administrativo de Data Loss Prevention", "period": "PerÃ­odo", "generated": "Generado el",
         "administrator": "Administrador", "filters": "Filtros", "start": "inicio", "now": "ahora", "no_filters": "Sin filtros adicionales",
-        "endpoint": "Endpoint", "classification": "Clasificación", "channel": "Canal", "severity": "Severidad", "action": "Acción",
-        "blocked": "Bloqueado", "min_risk": "Riesgo mínimo", "search": "Búsqueda", "events": "Eventos", "incidents": "Incidentes",
-        "blocks": "Bloqueos", "endpoints": "Endpoints", "max_risk": "Riesgo máx.", "distribution": "Distribución",
+        "endpoint": "Endpoint", "classification": "ClasificaciÃ³n", "channel": "Canal", "severity": "Severidad", "action": "AcciÃ³n",
+        "blocked": "Bloqueado", "min_risk": "Riesgo mÃ­nimo", "search": "BÃºsqueda", "events": "Eventos", "incidents": "Incidentes",
+        "blocks": "Bloqueos", "endpoints": "Endpoints", "max_risk": "Riesgo mÃ¡x.", "distribution": "DistribuciÃ³n",
         "occurrences": "Ocurrencias", "no_data": "Sin datos", "date": "Fecha", "risk": "Riesgo", "user": "Usuario",
-        "blocked_short": "Bloq.", "document": "Documento", "object": "Objeto", "yes": "SÍ", "no": "NO",
-        "no_events": "Ningún evento coincide con los filtros seleccionados.",
-        "detail_limit": "El resumen incluye {total} eventos. La tabla detallada se limitó a los {limit} eventos más recientes para mantener el PDF utilizable.",
+        "blocked_short": "Bloq.", "document": "Documento", "object": "Objeto", "yes": "SÃ", "no": "NO",
+        "no_events": "NingÃºn evento coincide con los filtros seleccionados.",
+        "detail_limit": "El resumen incluye {total} eventos. La tabla detallada se limitÃ³ a los {limit} eventos mÃ¡s recientes para mantener el PDF utilizable.",
         "privacy": "Privacidad: el informe no incluye valores sensibles en texto claro. Los datos detectados permanecen enmascarados/fingerprinted en BSC DLP.",
-        "footer": "BSC DLP Community - Informe administrativo", "page": "Página", "print": "Imprimir / Guardar como PDF",
-        "classifications": "Clasificaciones", "report_heading": "BSC DLP — Informe de Protección de Datos"
+        "footer": "BSC DLP Community - Informe administrativo", "page": "PÃ¡gina", "print": "Imprimir / Guardar como PDF",
+        "classifications": "Clasificaciones", "report_heading": "BSC DLP â€” Informe de ProtecciÃ³n de Datos"
     },
 }
 
@@ -1702,7 +1769,7 @@ def _report_period_label(start: Optional[str], end: Optional[str], lang: str = "
             return fallback
         return str(value).replace("T", " ").replace("Z", "")[:19]
 
-    return f"{compact(start, _report_t(lang, 'start'))} — {compact(end, _report_t(lang, 'now'))}"
+    return f"{compact(start, _report_t(lang, 'start'))} â€” {compact(end, _report_t(lang, 'now'))}"
 
 
 def _report_filter_text(lang: str = "pt", **filters) -> str:
@@ -2127,7 +2194,7 @@ def report_print(
         top_classes = "".join(f"<li><strong>{html.escape(k)}</strong>: {v}</li>" for k, v in list(metrics['by_classification'].items())[:10]) or f"<li>{html.escape(_report_t(lang, 'no_events'))}</li>"
         doc = f"""<!doctype html><html lang="{'pt-BR' if lang=='pt' else 'en' if lang=='en' else 'es'}"><head><meta charset="utf-8"><title>BSC DLP Report</title>
 <style>body{{font-family:Segoe UI,Arial,sans-serif;color:#171217;margin:34px}}h1{{margin:0;color:#d41472}}.meta{{color:#665b63;margin:6px 0 22px}}.cards{{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:18px 0}}.card{{border:1px solid #ddd;padding:12px;border-radius:8px}}.card strong{{display:block;font-size:24px}}table{{border-collapse:collapse;width:100%;font-size:10px}}th,td{{border-bottom:1px solid #ddd;padding:7px;text-align:left}}th{{background:#f7edf3}}ul{{columns:2}}@media print{{button{{display:none}}body{{margin:12mm}}}}</style></head><body>
-<button onclick="window.print()">{html.escape(_report_t(lang, "print"))}</button><h1>{html.escape(_report_t(lang, "report_heading"))}</h1><div class="meta">{html.escape(_report_t(lang, "period"))}: {period} · {html.escape(_report_t(lang, "generated"))}: {now().isoformat()} · {html.escape(_report_t(lang, "administrator"))}: {html.escape(admin)}</div>
+<button onclick="window.print()">{html.escape(_report_t(lang, "print"))}</button><h1>{html.escape(_report_t(lang, "report_heading"))}</h1><div class="meta">{html.escape(_report_t(lang, "period"))}: {period} Â· {html.escape(_report_t(lang, "generated"))}: {now().isoformat()} Â· {html.escape(_report_t(lang, "administrator"))}: {html.escape(admin)}</div>
 <div class="cards"><div class="card">{html.escape(_report_t(lang, "events"))}<strong>{metrics['events']}</strong></div><div class="card">{html.escape(_report_t(lang, "incidents"))}<strong>{metrics['incidents']}</strong></div><div class="card">{html.escape(_report_t(lang, "blocks"))}<strong>{metrics['blocked']}</strong></div><div class="card">{html.escape(_report_t(lang, "endpoints"))}<strong>{metrics['endpoints']}</strong></div><div class="card">{html.escape(_report_t(lang, "max_risk"))}<strong>{metrics['max_risk']}</strong></div></div>
 <h2>{html.escape(_report_t(lang, "classifications"))}</h2><ul>{top_classes}</ul><h2>{html.escape(_report_t(lang, "events"))}</h2><table><thead><tr><th>{html.escape(_report_t(lang, "date"))}</th><th>{html.escape(_report_t(lang, "risk"))}</th><th>Endpoint</th><th>{html.escape(_report_t(lang, "classification"))}</th><th>{html.escape(_report_t(lang, "channel"))}</th><th>{html.escape(_report_t(lang, "action"))}</th><th>{html.escape(_report_t(lang, "blocked_short"))}</th><th>{html.escape(_report_t(lang, "object"))}</th></tr></thead><tbody>{table_rows}</tbody></table></body></html>"""
         return HTMLResponse(doc)
@@ -2261,3 +2328,5 @@ def capabilities(request: Request):
             "note": "BLOCK removes the detected object from its source path into endpoint quarantine after write detection. Kernel pre-write blocking requires the future Windows minifilter module.",
         },
     }
+
+

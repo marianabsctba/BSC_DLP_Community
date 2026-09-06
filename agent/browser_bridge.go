@@ -275,6 +275,7 @@ func appendBrowserUploadChunk(body BrowserUploadChunkRequest) error {
 func browserDecision(
 	api, endpointID, hostname, username string,
 	destination, browser, eventType, objectName, objectHash, inspection, docType, channel string,
+	objectSizeBytes int64,
 	detections []Detection,
 ) BrowserInspectResponse {
 	if len(detections) == 0 {
@@ -327,7 +328,29 @@ func browserDecision(
 		processName = processName[:240]
 	}
 
+	seenDetections := map[string]bool{}
+
 	for _, detection := range detections {
+		dedupValue := strings.TrimSpace(detection.Value)
+
+		if strings.EqualFold(strings.TrimSpace(detection.Classification), "CPF") {
+			var digits strings.Builder
+			for _, r := range dedupValue {
+				if r >= '0' && r <= '9' {
+					digits.WriteRune(r)
+				}
+			}
+			if digits.Len() > 0 {
+				dedupValue = digits.String()
+			}
+		}
+
+		detectionKey := strings.ToUpper(strings.TrimSpace(detection.Classification)) + "|" + fingerprint(dedupValue)
+		if seenDetections[detectionKey] {
+			continue
+		}
+		seenDetections[detectionKey] = true
+
 		decision := decisions[detection.Classification]
 		blocked := shouldBlock && shouldMessagingClipboardBlock(decision.Action)
 
@@ -364,6 +387,7 @@ func browserDecision(
 			Process:             processName,
 			ObjectPath:          objectPath,
 			ObjectHash:          objectHash,
+			ObjectSizeBytes:     objectSizeBytes,
 			Classification:      detection.Classification,
 			Severity:            decision.Severity,
 			Action:              decision.Action,
@@ -453,6 +477,7 @@ func finishBrowserUpload(
 		"browser_file_upload+"+inspection,
 		docType,
 		"browser_upload",
+		session.Received,
 		detections,
 	)
 }
@@ -489,7 +514,7 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok","service":"bsc-dlp-browser-bridge","version":"0.6.6.3","file_upload":true,"guard_presence":true}`))
+		_, _ = w.Write([]byte(`{"status":"ok","service":"bsc-dlp-browser-bridge","version":"0.6.7","file_upload":true,"guard_presence":true}`))
 	})
 
 	mux.HandleFunc("/v1/guard/heartbeat", func(w http.ResponseWriter, r *http.Request) {
@@ -566,6 +591,7 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 			"browser_outgoing_text",
 			"browser_text",
 			"messaging",
+			0,
 			detections,
 		)
 		writeBrowserJSON(w, response)

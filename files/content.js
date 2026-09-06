@@ -1,4 +1,4 @@
-(() => {
+﻿(() => {
   "use strict";
 
   const FILE_CHUNK_BYTES = 192 * 1024;
@@ -211,7 +211,7 @@
     const reason = (reasons || []).find(item =>
       item.includes("file_too_large") || item.includes("unsupported_file_type") || item.includes("inspection_error")
     );
-    return reason ? ` BSC DLP não inspecionou completamente: ${reason}.` : "";
+    return reason ? ` BSC DLP nÃ£o inspecionou completamente: ${reason}.` : "";
   }
 
   function replayFileInput(input) {
@@ -239,14 +239,14 @@
 
     if (!result.available) {
       replayFileInput(input);
-      toast("BSC DLP: agente local indisponível; upload liberado (fail-open).");
+      toast("BSC DLP: agente local indisponÃ­vel; upload liberado (fail-open).");
       return;
     }
 
     if (result.block) {
       input.value = "";
       toast(
-        `BSC DLP bloqueou arquivo sensível antes do upload para ${uploadDestination()}${classificationLabel(result.classifications)}.`,
+        `BSC DLP bloqueou arquivo sensÃ­vel antes do upload para ${uploadDestination()}${classificationLabel(result.classifications)}.`,
         true
       );
       return;
@@ -256,7 +256,7 @@
 
     if (result.action === "ALERT") {
       toast(
-        `BSC DLP registrou conteúdo sensível em upload para ${uploadDestination()}${classificationLabel(result.classifications)}.`
+        `BSC DLP registrou conteÃºdo sensÃ­vel em upload para ${uploadDestination()}${classificationLabel(result.classifications)}.`
       );
     } else {
       const skipped = skippedInspectionLabel(result.reasons);
@@ -278,16 +278,16 @@
     const result = await inspectFiles(originalFiles, "drag_drop");
 
     if (!result.available) {
-      toast("BSC DLP: agente local indisponível; upload por drag & drop liberado (fail-open).");
+      toast("BSC DLP: agente local indisponÃ­vel; upload por drag & drop liberado (fail-open).");
     } else if (result.block) {
       toast(
-        `BSC DLP bloqueou arquivo sensível em drag & drop para ${uploadDestination()}${classificationLabel(result.classifications)}.`,
+        `BSC DLP bloqueou arquivo sensÃ­vel em drag & drop para ${uploadDestination()}${classificationLabel(result.classifications)}.`,
         true
       );
       return;
     } else if (result.action === "ALERT") {
       toast(
-        `BSC DLP registrou conteúdo sensível em drag & drop para ${uploadDestination()}${classificationLabel(result.classifications)}.`
+        `BSC DLP registrou conteÃºdo sensÃ­vel em drag & drop para ${uploadDestination()}${classificationLabel(result.classifications)}.`
       );
     }
 
@@ -320,16 +320,16 @@
     const result = await inspectFiles(originalFiles, "paste_file");
 
     if (!result.available) {
-      toast("BSC DLP: agente local indisponível; colagem de arquivo liberada (fail-open).");
+      toast("BSC DLP: agente local indisponÃ­vel; colagem de arquivo liberada (fail-open).");
     } else if (result.block) {
       toast(
-        `BSC DLP bloqueou arquivo/imagem sensível colado em ${uploadDestination()}${classificationLabel(result.classifications)}.`,
+        `BSC DLP bloqueou arquivo/imagem sensÃ­vel colado em ${uploadDestination()}${classificationLabel(result.classifications)}.`,
         true
       );
       return;
     } else if (result.action === "ALERT") {
       toast(
-        `BSC DLP registrou arquivo/imagem sensível colado em ${uploadDestination()}${classificationLabel(result.classifications)}.`
+        `BSC DLP registrou arquivo/imagem sensÃ­vel colado em ${uploadDestination()}${classificationLabel(result.classifications)}.`
       );
     }
 
@@ -448,18 +448,18 @@
 
       if (!result.available) {
         insertText(target, text);
-        toast("BSC DLP: agente local indisponível; conteúdo liberado (fail-open).");
+        toast("BSC DLP: agente local indisponÃ­vel; conteÃºdo liberado (fail-open).");
         return;
       }
 
       if (result.block) {
-        toast(`BSC DLP bloqueou conteúdo sensível no WhatsApp Web${classificationLabel(result.classifications)}.`, true);
+        toast(`BSC DLP bloqueou conteÃºdo sensÃ­vel no WhatsApp Web${classificationLabel(result.classifications)}.`, true);
         return;
       }
 
       insertText(target, text);
       if (result.action === "ALERT") {
-        toast(`BSC DLP registrou conteúdo sensível no WhatsApp Web${classificationLabel(result.classifications)}.`);
+        toast(`BSC DLP registrou conteÃºdo sensÃ­vel no WhatsApp Web${classificationLabel(result.classifications)}.`);
       }
     }, true);
 
@@ -481,7 +481,7 @@
           bypassSendOnce = true;
           button.click();
         }
-        toast("BSC DLP: agente local indisponível; envio liberado (fail-open).");
+        toast("BSC DLP: agente local indisponÃ­vel; envio liberado (fail-open).");
         return;
       }
 
@@ -497,7 +497,7 @@
       }
 
       if (result.action === "ALERT") {
-        toast(`BSC DLP registrou conteúdo sensível no WhatsApp Web${classificationLabel(result.classifications)}.`);
+        toast(`BSC DLP registrou conteÃºdo sensÃ­vel no WhatsApp Web${classificationLabel(result.classifications)}.`);
       }
     }, true);
 
@@ -528,7 +528,7 @@
       if (!result.available) {
         bypassSendOnce = true;
         button.click();
-        toast("BSC DLP: agente local indisponível; envio liberado (fail-open).");
+        toast("BSC DLP: agente local indisponÃ­vel; envio liberado (fail-open).");
         return;
       }
 
@@ -541,10 +541,11 @@
       button.click();
 
       if (result.action === "ALERT") {
-        toast(`BSC DLP registrou conteúdo sensível no WhatsApp Web${classificationLabel(result.classifications)}.`);
+        toast(`BSC DLP registrou conteÃºdo sensÃ­vel no WhatsApp Web${classificationLabel(result.classifications)}.`);
       }
     }, true);
   }
 
-  console.info(`[BSC DLP] Browser Guard v0.6.6.1 active: generic upload DLP on ${uploadDestination()}`);
+  console.info(`[BSC DLP] Browser Guard v0.6.7 active: generic upload DLP on ${uploadDestination()}`);
 })();
+
