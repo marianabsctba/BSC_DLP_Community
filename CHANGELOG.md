@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.6.3 - 2026-09-06
+
+- Browser Guard Presence Watch para Chrome, Edge e Firefox.
+- A extensão envia heartbeat local periódico ao bridge do agente.
+- O agente verifica se o navegador está em execução e alerta quando o heartbeat da extensão desaparece.
+- Novo evento `BROWSER_GUARD_DISABLED_OR_MISSING` em `channel=browser_guard`, severidade HIGH e ação ALERT.
+- Novo evento `BROWSER_GUARD_RESTORED` quando a proteção retorna.
+- Anti-spam por transição de estado: um alerta por perda, um evento por restauração.
+- Navegador fechado não é tratado como extensão desabilitada.
+- Edge/Chrome usam MV3 service worker; Firefox mantém `background.scripts` compatibility path.
+- Browser Upload e Browser Guard adicionados aos filtros de canal do dashboard.
+
 ## 0.6.6 - 2026-09-06
 
 - Novo **Sensitive Data Catalog & Confidence Engine** baseado em LGPD/ANPD, NIST PII, GDPR, PCI DSS e práticas de DLP por confiança/evidência.

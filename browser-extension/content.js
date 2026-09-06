@@ -53,16 +53,43 @@
 
   function runtimeMessage(message) {
     return new Promise(resolve => {
-      chrome.runtime.sendMessage(message, response => {
-        if (chrome.runtime.lastError || !response || !response.ok) {
+      const runtime = globalThis.chrome?.runtime;
+
+      if (!runtime || typeof runtime.sendMessage !== "function") {
+        resolve({
+          ok: false,
+          error: "extension_runtime_unavailable"
+        });
+        return;
+      }
+
+      try {
+        runtime.sendMessage(message, response => {
+          let runtimeError = null;
+
+          try {
+            runtimeError = runtime.lastError?.message || null;
+          } catch {}
+
+          if (runtimeError || !response || !response.ok) {
+            resolve({
+              ok: false,
+              error: runtimeError || response?.error || "bridge_unavailable"
+            });
+            return;
+          }
+
           resolve({
-            ok: false,
-            error: chrome.runtime.lastError?.message || response?.error || "bridge_unavailable"
+            ok: true,
+            data: response.data || {}
           });
-          return;
-        }
-        resolve({ ok: true, data: response.data || {} });
-      });
+        });
+      } catch (error) {
+        resolve({
+          ok: false,
+          error: error?.message || "extension_runtime_unavailable"
+        });
+      }
     });
   }
 
@@ -375,27 +402,32 @@
     }
 
     function inspectText(text, eventType) {
-      return new Promise(resolve => {
-        chrome.runtime.sendMessage({
-          type: "bsc_dlp_inspect",
-          destination: textDestination(),
-          page_url: pageURL(),
-          event_type: eventType,
-          text
-        }, response => {
-          if (chrome.runtime.lastError || !response || !response.ok) {
-            resolve({ available: false, block: false, action: "ALLOW", classifications: [] });
-            return;
-          }
+      return runtimeMessage({
+        type: "bsc_dlp_inspect",
+        destination: textDestination(),
+        page_url: pageURL(),
+        event_type: eventType,
+        text
+      }).then(result => {
+        if (!result.ok) {
+          return {
+            available: false,
+            block: false,
+            action: "ALLOW",
+            classifications: []
+          };
+        }
 
-          const data = response.data || {};
-          resolve({
-            available: true,
-            block: Boolean(data.block),
-            action: String(data.action || "ALLOW"),
-            classifications: Array.isArray(data.classifications) ? data.classifications : []
-          });
-        });
+        const data = result.data || {};
+
+        return {
+          available: true,
+          block: Boolean(data.block),
+          action: String(data.action || "ALLOW"),
+          classifications: Array.isArray(data.classifications)
+            ? data.classifications
+            : []
+        };
       });
     }
 

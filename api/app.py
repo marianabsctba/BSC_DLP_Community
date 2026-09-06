@@ -575,6 +575,7 @@ def risk_for_event(
         "download": 10,
         "messaging": 24,
         "browser_upload": 26,
+        "browser_guard": 28,
         "email": 22,
         "ai": 26,
         "clipboard": 16,
@@ -669,7 +670,11 @@ def risk_for_event(
 
     score = min(score, 100)
 
-    if channel == "removable" and detections >= 10:
+    if channel == "browser_guard" and body.classification.upper() == "BROWSER_GUARD_DISABLED_OR_MISSING":
+        incident = "Browser Guard protection disabled or missing"
+    elif channel == "browser_guard" and body.classification.upper() == "BROWSER_GUARD_RESTORED":
+        incident = "Browser Guard protection restored"
+    elif channel == "removable" and detections >= 10:
         incident = "Bulk sensitive-data transfer to removable media"
     elif channel == "removable":
         incident = "Possible removable-media exfiltration"
@@ -713,7 +718,7 @@ def incident_key_for_event(body: EventIn, incident_type: str, event_time: dateti
 
 app = FastAPI(
     title="BSC DLP API",
-    version="0.6.6",
+    version="0.6.6.3",
     description="BSC DLP Community Edition - admin console, risk engine and endpoint enforcement",
     docs_url=None,
     redoc_url=None,
@@ -750,7 +755,7 @@ def health():
     return {
         "status": "ok",
         "engine": "BSC DLP",
-        "version": "0.6.6",
+        "version": "0.6.6.3",
         "database": "sqlite",
         "server_time_utc": utc_iso(now()),
         "server_time_local": datetime.now().astimezone().isoformat(timespec="seconds"),

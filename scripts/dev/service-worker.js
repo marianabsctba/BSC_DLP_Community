@@ -18,6 +18,84 @@ async function bridgePost(path, payload) {
   return response.json();
 }
 
+
+const BSC_GUARD_HEARTBEAT_ALARM = "bsc_dlp_guard_heartbeat";
+const BSC_GUARD_HEARTBEAT_MINUTES = 1;
+
+function bscBrowserName() {
+  const ua = String(navigator.userAgent || "");
+  if (/Edg\//i.test(ua)) return "edge";
+  if (/Firefox\//i.test(ua)) return "firefox";
+  if (/Chrome\//i.test(ua) || /Chromium\//i.test(ua)) return "chrome";
+  return "unknown";
+}
+
+function bscGetInstallID() {
+  return new Promise(resolve => {
+    chrome.storage.local.get(["bsc_dlp_install_id"], values => {
+      if (chrome.runtime.lastError) {
+        resolve("");
+        return;
+      }
+      let value = String(values?.bsc_dlp_install_id || "").trim();
+      if (value) {
+        resolve(value);
+        return;
+      }
+      value = (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function")
+        ? globalThis.crypto.randomUUID()
+        : `bsc-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      chrome.storage.local.set({ bsc_dlp_install_id: value }, () => resolve(value));
+    });
+  });
+}
+
+async function bscSendGuardHeartbeat() {
+  const browser = bscBrowserName();
+  if (browser === "unknown") return;
+  const installID = await bscGetInstallID();
+  const manifest = chrome.runtime.getManifest();
+  await bridgePost("/v1/guard/heartbeat", {
+    browser,
+    extension_version: String(manifest?.version || ""),
+    install_id: installID
+  });
+}
+
+function bscEnsureHeartbeatAlarm() {
+  if (!chrome.alarms || typeof chrome.alarms.create !== "function") return;
+  chrome.alarms.create(BSC_GUARD_HEARTBEAT_ALARM, {
+    delayInMinutes: 0.5,
+    periodInMinutes: BSC_GUARD_HEARTBEAT_MINUTES
+  });
+}
+
+if (chrome.alarms?.onAlarm) {
+  chrome.alarms.onAlarm.addListener(alarm => {
+    if (alarm?.name === BSC_GUARD_HEARTBEAT_ALARM) {
+      bscSendGuardHeartbeat().catch(() => {});
+    }
+  });
+}
+
+if (chrome.runtime?.onInstalled) {
+  chrome.runtime.onInstalled.addListener(() => {
+    bscEnsureHeartbeatAlarm();
+    bscSendGuardHeartbeat().catch(() => {});
+  });
+}
+
+if (chrome.runtime?.onStartup) {
+  chrome.runtime.onStartup.addListener(() => {
+    bscEnsureHeartbeatAlarm();
+    bscSendGuardHeartbeat().catch(() => {});
+  });
+}
+
+bscEnsureHeartbeatAlarm();
+bscSendGuardHeartbeat().catch(() => {});
+
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (!message || typeof message.type !== "string") return;
 

@@ -489,7 +489,36 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok","service":"bsc-dlp-browser-bridge","version":"0.6.5","file_upload":true}`))
+		_, _ = w.Write([]byte(`{"status":"ok","service":"bsc-dlp-browser-bridge","version":"0.6.6.3","file_upload":true,"guard_presence":true}`))
+	})
+
+	mux.HandleFunc("/v1/guard/heartbeat", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if !requireBrowserExtension(w, r) {
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, 32*1024)
+		defer r.Body.Close()
+
+		var body BrowserGuardHeartbeatRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
+		}
+		if err := recordBrowserGuardHeartbeat(api, endpointID, hostname, username, body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		writeBrowserJSON(w, map[string]any{
+			"status":                    "ok",
+			"browser":                   normalizeGuardBrowser(body.Browser),
+			"heartbeat_timeout_seconds": int(browserGuardHeartbeatTimeout / time.Second),
+		})
 	})
 
 	mux.HandleFunc("/v1/inspect", func(w http.ResponseWriter, r *http.Request) {
@@ -662,6 +691,8 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 		writeBrowserJSON(w, map[string]any{"status": "ok"})
 	})
 
+	startBrowserGuardPresenceWatch(api, endpointID, hostname, username)
+
 	server := &http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: 3 * time.Second,
@@ -677,7 +708,7 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 	}()
 
 	go func() {
-		log.Printf("browser DLP bridge active http://%s (text + generic file upload)", addr)
+		log.Printf("browser DLP bridge active http://%s (text + generic file upload + guard presence watch)", addr)
 		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
 			log.Printf("browser DLP bridge error: %v", err)
 		}

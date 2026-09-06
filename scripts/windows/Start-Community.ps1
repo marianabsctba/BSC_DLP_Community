@@ -69,7 +69,7 @@ foreach ($Dir in @($HomeDir,$ConfigDir,$DataDir,$SecretsDir,$LogsDir,$RuntimeDir
 }
 
 Write-Host ""
-Write-Host "BSC DLP Community v0.6.6" -ForegroundColor Magenta
+Write-Host "BSC DLP Community v0.6.6.3" -ForegroundColor Magenta
 Write-Host "[1/6] Preparing local runtime..." -ForegroundColor Cyan
 
 $ExistingDatabase = Join-Path $DataDir "dlp.db"
@@ -125,7 +125,7 @@ function Test-BscPortFree {
 function Test-BscHealth {
     try {
         $h = Invoke-RestMethod -Method Get -Uri "$ApiUrl/health" -TimeoutSec 1
-        return ($h.status -eq "ok" -and $h.engine -eq "BSC DLP" -and $h.version -eq "0.6.6")
+        return ($h.status -eq "ok" -and $h.engine -eq "BSC DLP" -and $h.version -eq "0.6.6.3")
     }
     catch { return $false }
 }
@@ -364,7 +364,7 @@ Set-Content -Path (Join-Path $RuntimeDir "agent.pid") -Value $AgentProcess.Id -E
 
 Write-Host "[6/6] BSC DLP is ready." -ForegroundColor Green
 Write-Host ""
-Write-Host "BSC DLP v0.6.6 is running." -ForegroundColor Green
+Write-Host "BSC DLP v0.6.6.3 is running." -ForegroundColor Green
 Write-Host "Dashboard: $BaseUrl"
 Write-Host "Endpoint URL: $PublicUrl"
 Write-Host "Runtime:   $HomeDir"
