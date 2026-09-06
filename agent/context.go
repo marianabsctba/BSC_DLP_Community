@@ -43,7 +43,7 @@ func destinationTrustForChannel(channel string) string {
 		return "untrusted"
 	case "filesystem", "download", "screenshot":
 		return "local"
-	case "messaging", "email", "ai":
+	case "messaging", "email", "ai", "browser_upload":
 		return "external"
 	default:
 		return "unknown"
@@ -103,6 +103,9 @@ func buildObjectContext(path, channel string, detections []Detection) ObjectCont
 	}
 
 	for _, detection := range detections {
+		for _, catalogTag := range sensitiveCatalogTags(detection) {
+			addTag(catalogTag)
+		}
 		evidence := strings.ToLower(detection.Evidence)
 		if strings.Contains(evidence, "obfuscated_identifier") {
 			addTag("obfuscated_identifier")
@@ -116,6 +119,10 @@ func buildObjectContext(path, channel string, detections []Detection) ObjectCont
 		if strings.Contains(evidence, "embedded_identifier") {
 			addTag("embedded_identifier")
 		}
+	}
+
+	for _, aggregateTag := range catalogAggregateTags(detections) {
+		addTag(aggregateTag)
 	}
 
 	tags := make([]string, 0, len(tagSet))

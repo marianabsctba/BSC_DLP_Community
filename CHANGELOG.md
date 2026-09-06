@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.6.6 - 2026-09-06
+
+- Novo **Sensitive Data Catalog & Confidence Engine** baseado em LGPD/ANPD, NIST PII, GDPR, PCI DSS e práticas de DLP por confiança/evidência.
+- Catálogo separa PII, linkable data, dado pessoal sensível, financeiro, payment card, credenciais/secrets e business data.
+- CPF/CNPJ/PAN continuam independentes de palavra-chave quando checksum valida; contexto passa a elevar confiança, não ser requisito absoluto.
+- Novos detectores: telefone BR formatado, data de nascimento contextual, nome completo contextual, endereço físico, IP/MAC contextuais, IMEI contextual+Luhn, placa BR, geolocalização contextual, CNH/PIS-NIS/título/CNS/matrículas/prontuário contextuais.
+- PCI DSS: CVV/CVC/CID, PIN e track data entram como Sensitive Authentication Data e recebem BLOCK em canais externos.
+- Novos sinais de correlação: `pii_bundle`, `pii_profile`, `special_category_linked_identity`, `pci_account_plus_authentication`.
+- CEP permanece evidência auxiliar de endereço, não um detector PII independente.
+- Classes sem detecção segura por regex (biometria, genética, raça/etnia, religião, política, sindicato, vida sexual/orientação, saúde clínica ampla) entram no catálogo como `semantic_required`, sem fingir cobertura.
+
+## 0.6.5 - 2026-09-05
+
+- Novo **Generic Browser Upload DLP** no BSC DLP Browser Guard.
+- A extensão passa a observar seletores de arquivo, drag & drop e paste de arquivo/imagem em páginas HTTP/HTTPS.
+- Arquivos são enviados em chunks apenas para o bridge local `127.0.0.1:8765`; o conteúdo não sai do endpoint para inspeção.
+- O bridge reconstrói um arquivo temporário local, reutiliza os extratores/OCR existentes e apaga o temporário ao final.
+- Novo canal `browser_upload` com destino igual ao hostname da página e `destination_trust=external`.
+- Policies padrão: CPF/cartão/secrets/credenciais em BLOCK; CPF-like/CNPJ/dados bancários/PIX em ALERT.
+- Extensões textuais sensíveis `.env`, `.pem`, `.key` e `.sql` entram no pipeline de extração textual.
+- WhatsApp Web text guard continua ativo e separado do pipeline de upload.
+- Limite atual por arquivo: 25 MiB. Tipos ainda não suportados ficam fail-open com aviso; ZIP/7z/encrypted archives ficam para a próxima camada.
+- Limite técnico: interceptação DOM é best-effort; aplicações web que processam arquivos fora dos eventos DOM convencionais podem exigir integração específica.
+
 ## 0.6.4.1 - 2026-09-05
 
 - Hotfix do OCR de screenshots no clipboard Windows.

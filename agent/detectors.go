@@ -189,6 +189,7 @@ func detectSensitive(text string) []Detection {
 
 func detectSensitiveWithRules(text string, rules []CustomDetectionRule) []Detection {
 	out := detectSensitive(text)
+	out = augmentSensitiveCatalogDetections(text, out)
 	seen := map[string]bool{}
 	for _, d := range out {
 		seen[d.Classification+"|"+fingerprint(d.Value)] = true

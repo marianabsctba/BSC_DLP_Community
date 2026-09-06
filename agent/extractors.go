@@ -31,7 +31,7 @@ func supportedDocumentPath(path string) bool {
 	switch strings.ToLower(filepath.Ext(path)) {
 	case ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".webp",
 		".pdf", ".docx", ".xlsx", ".pptx",
-		".txt", ".csv", ".json", ".xml", ".log", ".md", ".ini", ".conf", ".yaml", ".yml":
+		".txt", ".csv", ".json", ".xml", ".log", ".md", ".ini", ".conf", ".yaml", ".yml", ".env", ".pem", ".key", ".sql":
 		return true
 	default:
 		return false
@@ -289,7 +289,7 @@ func extractTextFromPath(path, channel string) (string, string, string, error) {
 	case ".docx", ".xlsx", ".pptx":
 		text, err := extractOpenXML(path)
 		return text, "openxml_text", docType, err
-	case ".txt", ".csv", ".json", ".xml", ".log", ".md", ".ini", ".conf", ".yaml", ".yml":
+	case ".txt", ".csv", ".json", ".xml", ".log", ".md", ".ini", ".conf", ".yaml", ".yml", ".env", ".pem", ".key", ".sql":
 		text, err := readTextFile(path)
 		return text, "text_content", docType, err
 	default:

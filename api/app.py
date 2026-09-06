@@ -251,12 +251,39 @@ def seed_default_policies() -> None:
         ("Secrets - Removable Media Block", "SECRET", "CRITICAL", "BLOCK", "removable", 10),
         ("Credentials - Removable Media Block", "CREDENTIAL", "CRITICAL", "BLOCK", "removable", 10),
         ("Credentials - Download Alert", "CREDENTIAL", "HIGH", "ALERT", "download", 30),
+        ("CPF - Browser Upload Block", "CPF", "CRITICAL", "BLOCK", "browser_upload", 5),
+        ("RG - Browser Upload Alert", "RG_BR", "HIGH", "ALERT", "browser_upload", 20),
+        ("Passport - Browser Upload Alert", "PASSPORT", "HIGH", "ALERT", "browser_upload", 20),
+        ("CNH - Browser Upload Alert", "CNH_BR", "HIGH", "ALERT", "browser_upload", 20),
+        ("CNS - Browser Upload Alert", "CNS_BR", "CRITICAL", "ALERT", "browser_upload", 15),
+        ("Email - Browser Upload Alert", "EMAIL_ADDRESS", "MEDIUM", "ALERT", "browser_upload", 40),
+        ("Phone - Browser Upload Alert", "PHONE_BR", "MEDIUM", "ALERT", "browser_upload", 40),
+        ("Birth Date - Browser Upload Alert", "DATE_OF_BIRTH", "MEDIUM", "ALERT", "browser_upload", 40),
+        ("Physical Address - Browser Upload Alert", "PHYSICAL_ADDRESS", "MEDIUM", "ALERT", "browser_upload", 40),
+        ("Card Security Code - Browser Upload Block", "CARD_SECURITY_CODE", "CRITICAL", "BLOCK", "browser_upload", 1),
+        ("Card PIN - Browser Upload Block", "CARD_PIN", "CRITICAL", "BLOCK", "browser_upload", 1),
+        ("Card Track Data - Browser Upload Block", "CARD_TRACK_DATA", "CRITICAL", "BLOCK", "browser_upload", 1),
+        ("CPF-like - Browser Upload Alert", "CPF_LIKE", "HIGH", "ALERT", "browser_upload", 20),
+        ("CNPJ - Browser Upload Alert", "CNPJ", "HIGH", "ALERT", "browser_upload", 20),
+        ("Card Data - Browser Upload Block", "CREDIT_CARD", "CRITICAL", "BLOCK", "browser_upload", 5),
+        ("Secrets - Browser Upload Block", "SECRET", "CRITICAL", "BLOCK", "browser_upload", 5),
+        ("Credentials - Browser Upload Block", "CREDENTIAL", "CRITICAL", "BLOCK", "browser_upload", 5),
+        ("Bank Data - Browser Upload Alert", "BANK_ACCOUNT", "HIGH", "ALERT", "browser_upload", 20),
+        ("PIX - Browser Upload Alert", "PIX_KEY", "HIGH", "ALERT", "browser_upload", 20),
         ("CPF - Messaging Alert", "CPF", "HIGH", "ALERT", "messaging", 25),
         ("CPF-like - Messaging Alert", "CPF_LIKE", "HIGH", "ALERT", "messaging", 30),
         ("CNPJ - Messaging Alert", "CNPJ", "HIGH", "ALERT", "messaging", 25),
         ("Bank Data - Messaging Alert", "BANK_ACCOUNT", "HIGH", "ALERT", "messaging", 20),
         ("PIX - Messaging Alert", "PIX_KEY", "HIGH", "ALERT", "messaging", 20),
         ("Card Data - Messaging Block", "CREDIT_CARD", "CRITICAL", "BLOCK", "messaging", 5),
+        ("Card Security Code - Messaging Block", "CARD_SECURITY_CODE", "CRITICAL", "BLOCK", "messaging", 1),
+        ("Card PIN - Messaging Block", "CARD_PIN", "CRITICAL", "BLOCK", "messaging", 1),
+        ("Card Track Data - Messaging Block", "CARD_TRACK_DATA", "CRITICAL", "BLOCK", "messaging", 1),
+        ("RG - Messaging Alert", "RG_BR", "HIGH", "ALERT", "messaging", 25),
+        ("Passport - Messaging Alert", "PASSPORT", "HIGH", "ALERT", "messaging", 25),
+        ("CNH - Messaging Alert", "CNH_BR", "HIGH", "ALERT", "messaging", 25),
+        ("Email - Messaging Alert", "EMAIL_ADDRESS", "MEDIUM", "ALERT", "messaging", 40),
+        ("Phone - Messaging Alert", "PHONE_BR", "MEDIUM", "ALERT", "messaging", 40),
         ("Secrets - Messaging Block", "SECRET", "CRITICAL", "BLOCK", "messaging", 5),
         ("Credentials - Messaging Block", "CREDENTIAL", "CRITICAL", "BLOCK", "messaging", 5),
     ]
@@ -547,6 +574,7 @@ def risk_for_event(
         "screenshot": 18,
         "download": 10,
         "messaging": 24,
+        "browser_upload": 26,
         "email": 22,
         "ai": 26,
         "clipboard": 16,
@@ -592,6 +620,19 @@ def risk_for_event(
         score += 6
         reasons.append("high_value_extension")
 
+    if "pii_bundle" in tags:
+        score += 8
+        reasons.append("privacy:pii_bundle")
+    if "pii_profile" in tags:
+        score += 10
+        reasons.append("privacy:pii_profile")
+    if "special_category_linked_identity" in tags:
+        score += 18
+        reasons.append("privacy:special_category_linked_identity")
+    if "pci_account_plus_authentication" in tags:
+        score += 20
+        reasons.append("pci:account_plus_authentication")
+
     if "evasive_obfuscation" in tags:
         score += 10
         reasons.append("evasion:strong")
@@ -632,6 +673,8 @@ def risk_for_event(
         incident = "Bulk sensitive-data transfer to removable media"
     elif channel == "removable":
         incident = "Possible removable-media exfiltration"
+    elif channel == "browser_upload":
+        incident = "Possible sensitive browser upload"
     elif channel == "messaging":
         incident = "Possible sensitive-data exposure via messaging"
     elif channel == "screenshot":
@@ -670,7 +713,7 @@ def incident_key_for_event(body: EventIn, incident_type: str, event_time: dateti
 
 app = FastAPI(
     title="BSC DLP API",
-    version="0.6.4.1",
+    version="0.6.6",
     description="BSC DLP Community Edition - admin console, risk engine and endpoint enforcement",
     docs_url=None,
     redoc_url=None,
@@ -707,7 +750,7 @@ def health():
     return {
         "status": "ok",
         "engine": "BSC DLP",
-        "version": "0.6.4.1",
+        "version": "0.6.6",
         "database": "sqlite",
         "server_time_utc": utc_iso(now()),
         "server_time_local": datetime.now().astimezone().isoformat(timespec="seconds"),

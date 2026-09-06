@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>BSC DLP Browser Upload Test</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#110d12;color:#fff;max-width:900px;margin:60px auto;padding:24px}
+.card{border:1px solid #5d2445;border-radius:18px;padding:28px;background:#1b131a}
+#drop{margin-top:22px;border:2px dashed #ff2d95;border-radius:16px;padding:55px;text-align:center}
+button{background:#ff2d95;color:white;border:0;border-radius:10px;padding:12px 18px;font-weight:700;cursor:pointer}
+code{color:#ff83bd}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>BSC DLP Browser Upload Test</h1>
+<p>Este teste gera em memória um TXT sintético com o CPF de teste <code>123.456.789-09</code> e simula um drag & drop.</p>
+<button id="run">Executar teste sintético</button>
+<div id="drop">Área de upload de teste</div>
+<p id="status">Aguardando.</p>
+</div>
+<script>
+const zone = document.getElementById("drop");
+const status = document.getElementById("status");
+let pageReceived = false;
+
+zone.addEventListener("drop", event => {
+  event.preventDefault();
+  pageReceived = true;
+  status.textContent = "A página recebeu o arquivo. Se havia policy BLOCK, o Browser Guard NÃO bloqueou.";
+});
+
+zone.addEventListener("dragover", event => event.preventDefault());
+
+document.getElementById("run").addEventListener("click", () => {
+  pageReceived = false;
+  status.textContent = "Enviando arquivo sintético para o Browser Guard...";
+  const file = new File(
+    ["BSC DLP TEST\nCPF: 123.456.789-09\n"],
+    "clientes_teste.txt",
+    {type:"text/plain"}
+  );
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  zone.dispatchEvent(new DragEvent("drop", {
+    bubbles:true,
+    cancelable:true,
+    dataTransfer:dt
+  }));
+  setTimeout(() => {
+    if (!pageReceived) {
+      status.textContent = "A página NÃO recebeu o arquivo. Verifique o toast BSC DLP e a dashboard.";
+    }
+  }, 6000);
+});
+</script>
+</body>
+</html>

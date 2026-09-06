@@ -1,17 +1,26 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
 
-const browserBridgeDefaultAddr = "127.0.0.1:8765"
+const (
+	browserBridgeDefaultAddr = "127.0.0.1:8765"
+	browserUploadChunkMax    = 512 * 1024
+	browserUploadSessionTTL  = 5 * time.Minute
+)
 
 type BrowserInspectRequest struct {
 	Destination string `json:"destination"`
@@ -28,6 +37,46 @@ type BrowserInspectResponse struct {
 	Classifications []string `json:"classifications"`
 	Reason          string   `json:"reason,omitempty"`
 }
+
+type BrowserUploadStartRequest struct {
+	Destination string `json:"destination"`
+	PageURL     string `json:"page_url"`
+	EventType   string `json:"event_type"`
+	Browser     string `json:"browser"`
+	Filename    string `json:"filename"`
+	ContentType string `json:"content_type"`
+	Size        int64  `json:"size"`
+}
+
+type BrowserUploadChunkRequest struct {
+	UploadID string `json:"upload_id"`
+	Sequence int    `json:"sequence"`
+	Data     string `json:"data"`
+}
+
+type BrowserUploadFinishRequest struct {
+	UploadID string `json:"upload_id"`
+}
+
+type browserUploadSession struct {
+	ID           string
+	Path         string
+	Destination  string
+	PageURL      string
+	EventType    string
+	Browser      string
+	Filename     string
+	ContentType  string
+	ExpectedSize int64
+	Received     int64
+	NextSequence int
+	CreatedAt    time.Time
+}
+
+var (
+	browserUploadSessions   = map[string]*browserUploadSession{}
+	browserUploadSessionsMu sync.Mutex
+)
 
 func browserBridgeAddr() string {
 	value := strings.TrimSpace(os.Getenv("BSC_DLP_BROWSER_BRIDGE"))
@@ -65,21 +114,370 @@ func normalizeBrowserDestination(value string) string {
 	}
 }
 
+func normalizeBrowserUploadDestination(value string) string {
+	value = strings.ToLower(strings.TrimSpace(value))
+	value = strings.TrimPrefix(value, "https://")
+	value = strings.TrimPrefix(value, "http://")
+	if slash := strings.IndexByte(value, '/'); slash >= 0 {
+		value = value[:slash]
+	}
+	return strings.TrimSpace(value)
+}
+
 func browserBridgeEnabled() bool {
 	raw := strings.ToLower(strings.TrimSpace(os.Getenv("BSC_DLP_BROWSER_SENSOR")))
 	return raw != "0" && raw != "false" && raw != "off" && raw != "disabled"
 }
 
+func newBrowserUploadID() (string, error) {
+	raw := make([]byte, 18)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(raw), nil
+}
+
+func removeBrowserUploadSession(uploadID string) *browserUploadSession {
+	browserUploadSessionsMu.Lock()
+	session := browserUploadSessions[uploadID]
+	delete(browserUploadSessions, uploadID)
+	browserUploadSessionsMu.Unlock()
+	return session
+}
+
+func cleanupBrowserUploadSessions() {
+	cutoff := time.Now().Add(-browserUploadSessionTTL)
+	var stale []*browserUploadSession
+
+	browserUploadSessionsMu.Lock()
+	for id, session := range browserUploadSessions {
+		if session.CreatedAt.Before(cutoff) {
+			stale = append(stale, session)
+			delete(browserUploadSessions, id)
+		}
+	}
+	browserUploadSessionsMu.Unlock()
+
+	for _, session := range stale {
+		_ = os.Remove(session.Path)
+	}
+}
+
+func startBrowserUploadSession(body BrowserUploadStartRequest) (*browserUploadSession, string, error) {
+	body.Filename = filepath.Base(strings.TrimSpace(body.Filename))
+	body.Destination = normalizeBrowserUploadDestination(body.Destination)
+	body.EventType = strings.ToLower(strings.TrimSpace(body.EventType))
+
+	if body.Filename == "" || body.Filename == "." {
+		return nil, "", fmt.Errorf("filename is required")
+	}
+	if body.Destination == "" {
+		return nil, "", fmt.Errorf("destination is required")
+	}
+	if body.Size < 0 {
+		return nil, "", fmt.Errorf("invalid file size")
+	}
+	if body.Size > maxInspectionBytes() {
+		return nil, "file_too_large", nil
+	}
+	if !supportedDocumentPath(body.Filename) {
+		return nil, "unsupported_file_type", nil
+	}
+
+	uploadID, err := newBrowserUploadID()
+	if err != nil {
+		return nil, "", err
+	}
+
+	ext := strings.ToLower(filepath.Ext(body.Filename))
+	temp, err := os.CreateTemp("", "bsc-dlp-browser-upload-*"+ext)
+	if err != nil {
+		return nil, "", err
+	}
+	tempPath := temp.Name()
+	if err := temp.Close(); err != nil {
+		_ = os.Remove(tempPath)
+		return nil, "", err
+	}
+
+	session := &browserUploadSession{
+		ID:           uploadID,
+		Path:         tempPath,
+		Destination:  body.Destination,
+		PageURL:      strings.TrimSpace(body.PageURL),
+		EventType:    body.EventType,
+		Browser:      strings.TrimSpace(body.Browser),
+		Filename:     body.Filename,
+		ContentType:  strings.TrimSpace(body.ContentType),
+		ExpectedSize: body.Size,
+		CreatedAt:    time.Now(),
+	}
+
+	browserUploadSessionsMu.Lock()
+	browserUploadSessions[uploadID] = session
+	browserUploadSessionsMu.Unlock()
+
+	return session, "", nil
+}
+
+func appendBrowserUploadChunk(body BrowserUploadChunkRequest) error {
+	body.UploadID = strings.TrimSpace(body.UploadID)
+	if body.UploadID == "" {
+		return fmt.Errorf("upload_id is required")
+	}
+	if len(body.Data) > (browserUploadChunkMax*4/3)+16 {
+		return fmt.Errorf("chunk is too large")
+	}
+
+	decoded, err := base64.StdEncoding.DecodeString(body.Data)
+	if err != nil {
+		return fmt.Errorf("invalid chunk encoding")
+	}
+	if len(decoded) > browserUploadChunkMax {
+		return fmt.Errorf("chunk is too large")
+	}
+
+	browserUploadSessionsMu.Lock()
+	defer browserUploadSessionsMu.Unlock()
+
+	session := browserUploadSessions[body.UploadID]
+	if session == nil {
+		return fmt.Errorf("upload session not found")
+	}
+	if body.Sequence != session.NextSequence {
+		return fmt.Errorf("unexpected chunk sequence")
+	}
+	if session.Received+int64(len(decoded)) > maxInspectionBytes() {
+		return fmt.Errorf("upload exceeds inspection limit")
+	}
+	if session.ExpectedSize > 0 && session.Received+int64(len(decoded)) > session.ExpectedSize {
+		return fmt.Errorf("upload exceeds declared size")
+	}
+
+	f, err := os.OpenFile(session.Path, os.O_WRONLY|os.O_APPEND, 0600)
+	if err != nil {
+		return err
+	}
+	_, writeErr := f.Write(decoded)
+	closeErr := f.Close()
+	if writeErr != nil {
+		return writeErr
+	}
+	if closeErr != nil {
+		return closeErr
+	}
+
+	session.Received += int64(len(decoded))
+	session.NextSequence++
+	return nil
+}
+
+func browserDecision(
+	api, endpointID, hostname, username string,
+	destination, browser, eventType, objectName, objectHash, inspection, docType, channel string,
+	detections []Detection,
+) BrowserInspectResponse {
+	if len(detections) == 0 {
+		return BrowserInspectResponse{
+			Status: "ok",
+			Action: "ALLOW",
+			Reason: "no_sensitive_match",
+		}
+	}
+
+	objectContext := buildObjectContext(objectName, channel, detections)
+	if channel == "browser_upload" {
+		objectContext.DestinationTrust = "external"
+	}
+
+	classSet := map[string]bool{}
+	classes := make([]string, 0, len(detections))
+	decisions := map[string]PolicyDecision{}
+	overallAction := "AUDIT"
+	shouldBlock := false
+
+	for _, detection := range detections {
+		if !classSet[detection.Classification] {
+			classSet[detection.Classification] = true
+			classes = append(classes, detection.Classification)
+		}
+		if _, exists := decisions[detection.Classification]; exists {
+			continue
+		}
+
+		decision := resolvePolicy(api, detection.Classification, channel)
+		decisions[detection.Classification] = decision
+
+		switch strings.ToUpper(decision.Action) {
+		case "BLOCK", "QUARANTINE":
+			overallAction = decision.Action
+			shouldBlock = true
+		case "ALERT":
+			if !shouldBlock {
+				overallAction = "ALERT"
+			}
+		}
+	}
+
+	processName := strings.TrimSpace(browser)
+	if processName == "" {
+		processName = "browser-extension"
+	}
+	if len(processName) > 240 {
+		processName = processName[:240]
+	}
+
+	for _, detection := range detections {
+		decision := decisions[detection.Classification]
+		blocked := shouldBlock && shouldMessagingClipboardBlock(decision.Action)
+
+		evidence := inspection + "+" + detection.Evidence
+		if destination != "" {
+			evidence += "+destination:" + destination
+		}
+		if eventType != "" {
+			evidence += "+event:" + eventType
+		}
+		if len(objectContext.ContextTags) > 0 {
+			evidence += "+context:" + strings.Join(objectContext.ContextTags, ",")
+		}
+		if blocked {
+			evidence += "+browser_pre_upload_block"
+		}
+
+		objectPath := "browser://" + destination
+		if channel == "browser_upload" {
+			objectPath += "/upload/" + filepath.Base(objectName)
+		} else {
+			objectPath += "/composer"
+		}
+
+		event := Event{
+			EventID: fmt.Sprintf(
+				"%s-%d",
+				fingerprint("browser|" + destination + "|" + objectName + "|" + detection.Classification + "|" + detection.Value)[:12],
+				time.Now().UnixNano(),
+			),
+			EndpointID:          endpointID,
+			Hostname:            hostname,
+			Username:            username,
+			Process:             processName,
+			ObjectPath:          objectPath,
+			ObjectHash:          objectHash,
+			Classification:      detection.Classification,
+			Severity:            decision.Severity,
+			Action:              decision.Action,
+			MaskedValue:         mask(detection.Value),
+			Fingerprint:         fingerprint(detection.Value),
+			Channel:             channel,
+			Destination:         destination,
+			Policy:              decision.Policy,
+			Evidence:            evidence,
+			Blocked:             blocked,
+			DocumentType:        docType,
+			DetectionCount:      objectContext.DetectionCount,
+			ClassificationCount: objectContext.ClassificationCount,
+			ContextTags:         objectContext.ContextTags,
+			SensitiveFilename:   objectContext.SensitiveFilename,
+			DestinationTrust:    objectContext.DestinationTrust,
+		}
+
+		if err := postJSON(api+"/events", event); err != nil {
+			log.Printf("browser DLP event error: %v", err)
+		}
+	}
+
+	return BrowserInspectResponse{
+		Status:          "ok",
+		Block:           shouldBlock,
+		Action:          overallAction,
+		Classifications: classes,
+		Reason:          "sensitive_content",
+	}
+}
+
+func finishBrowserUpload(
+	api, endpointID, hostname, username string,
+	uploadID string,
+) BrowserInspectResponse {
+	session := removeBrowserUploadSession(strings.TrimSpace(uploadID))
+	if session == nil {
+		return BrowserInspectResponse{
+			Status: "error",
+			Action: "ALLOW",
+			Reason: "upload_session_not_found",
+		}
+	}
+	defer os.Remove(session.Path)
+
+	if session.ExpectedSize != session.Received {
+		log.Printf(
+			"browser upload size mismatch file=%s expected=%d received=%d",
+			session.Filename,
+			session.ExpectedSize,
+			session.Received,
+		)
+		return BrowserInspectResponse{
+			Status: "error",
+			Action: "ALLOW",
+			Reason: "upload_size_mismatch",
+		}
+	}
+
+	text, inspection, docType, err := extractTextFromPath(session.Path, "browser_upload")
+	if err != nil {
+		log.Printf(
+			"browser upload inspection error destination=%s file=%s error=%v",
+			session.Destination,
+			session.Filename,
+			err,
+		)
+		return BrowserInspectResponse{
+			Status: "ok",
+			Action: "ALLOW",
+			Reason: "inspection_error_fail_open",
+		}
+	}
+
+	detections := detectSensitiveWithRules(text, customDetectionRules(api))
+	return browserDecision(
+		api,
+		endpointID,
+		hostname,
+		username,
+		session.Destination,
+		session.Browser,
+		session.EventType,
+		session.Filename,
+		fileHash(session.Path),
+		"browser_file_upload+"+inspection,
+		docType,
+		"browser_upload",
+		detections,
+	)
+}
+
+func requireBrowserExtension(w http.ResponseWriter, r *http.Request) bool {
+	if browserExtensionRequestAllowed(
+		r.Header.Get("Origin"),
+		r.Header.Get("X-BSC-DLP-Extension"),
+	) {
+		return true
+	}
+	http.Error(w, "forbidden", http.StatusForbidden)
+	return false
+}
+
 func startBrowserBridge(api, endpointID, hostname, username string) {
 	if !browserBridgeEnabled() {
-		log.Printf("browser messaging bridge disabled by BSC_DLP_BROWSER_SENSOR")
+		log.Printf("browser bridge disabled by BSC_DLP_BROWSER_SENSOR")
 		return
 	}
 
 	addr := browserBridgeAddr()
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Printf("browser messaging bridge unavailable addr=%s error=%v", addr, err)
+		log.Printf("browser bridge unavailable addr=%s error=%v", addr, err)
 		return
 	}
 
@@ -91,7 +489,7 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"status":"ok","service":"bsc-dlp-browser-bridge","version":"0.6.2"}`))
+		_, _ = w.Write([]byte(`{"status":"ok","service":"bsc-dlp-browser-bridge","version":"0.6.5","file_upload":true}`))
 	})
 
 	mux.HandleFunc("/v1/inspect", func(w http.ResponseWriter, r *http.Request) {
@@ -99,11 +497,7 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		if !browserExtensionRequestAllowed(
-			r.Header.Get("Origin"),
-			r.Header.Get("X-BSC-DLP-Extension"),
-		) {
-			http.Error(w, "forbidden", http.StatusForbidden)
+		if !requireBrowserExtension(w, r) {
 			return
 		}
 
@@ -130,97 +524,142 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 		}
 
 		detections := detectSensitiveWithRules(body.Text, customDetectionRules(api))
-		if len(detections) == 0 {
-			writeBrowserJSON(w, BrowserInspectResponse{Status: "ok", Action: "ALLOW"})
+		response := browserDecision(
+			api,
+			endpointID,
+			hostname,
+			username,
+			body.Destination,
+			body.Browser,
+			body.EventType,
+			"browser-composer.txt",
+			fingerprint(body.Text),
+			"browser_outgoing_text",
+			"browser_text",
+			"messaging",
+			detections,
+		)
+		writeBrowserJSON(w, response)
+	})
+
+	mux.HandleFunc("/v1/upload/start", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if !requireBrowserExtension(w, r) {
 			return
 		}
 
-		objectContext := buildObjectContext("browser-composer.txt", "messaging", detections)
-		objectContext.DestinationTrust = "external"
+		r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
+		defer r.Body.Close()
 
-		classSet := map[string]bool{}
-		classes := make([]string, 0, len(detections))
-		decisions := map[string]PolicyDecision{}
-		overallAction := "AUDIT"
-		shouldBlock := false
-
-		for _, detection := range detections {
-			if !classSet[detection.Classification] {
-				classSet[detection.Classification] = true
-				classes = append(classes, detection.Classification)
-			}
-			if _, exists := decisions[detection.Classification]; exists {
-				continue
-			}
-			decision := resolvePolicy(api, detection.Classification, "messaging")
-			decisions[detection.Classification] = decision
-
-			switch strings.ToUpper(decision.Action) {
-			case "BLOCK", "QUARANTINE":
-				overallAction = decision.Action
-				shouldBlock = true
-			case "ALERT":
-				if !shouldBlock {
-					overallAction = "ALERT"
-				}
-			}
+		var body BrowserUploadStartRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
 		}
 
-		for _, detection := range detections {
-			decision := decisions[detection.Classification]
-			blocked := shouldBlock && shouldMessagingClipboardBlock(decision.Action)
-
-			evidence := "browser_outgoing_text+" + body.Destination
-			if body.EventType != "" {
-				evidence += "+" + body.EventType
-			}
-
-			processName := strings.TrimSpace(body.Browser)
-			if processName == "" {
-				processName = "browser-extension"
-			}
-
-			event := Event{
-				EventID: fmt.Sprintf(
-					"%s-%d",
-					fingerprint("browser|" + body.Destination + "|" + detection.Classification + "|" + detection.Value)[:12],
-					time.Now().UnixNano(),
-				),
-				EndpointID:          endpointID,
-				Hostname:            hostname,
-				Username:            username,
-				Process:             processName,
-				ObjectPath:          "browser://" + body.Destination + "/composer",
-				ObjectHash:          fingerprint(body.Text),
-				Classification:      detection.Classification,
-				Severity:            decision.Severity,
-				Action:              decision.Action,
-				MaskedValue:         mask(detection.Value),
-				Fingerprint:         fingerprint(detection.Value),
-				Channel:             "messaging",
-				Destination:         body.Destination,
-				Policy:              decision.Policy,
-				Evidence:            evidence,
-				Blocked:             blocked,
-				DocumentType:        "browser_text",
-				DetectionCount:      objectContext.DetectionCount,
-				ClassificationCount: objectContext.ClassificationCount,
-				ContextTags:         objectContext.ContextTags,
-				SensitiveFilename:   false,
-				DestinationTrust:    "external",
-			}
-
-			if err := postJSON(api+"/events", event); err != nil {
-				log.Printf("browser messaging event error: %v", err)
-			}
+		session, skipReason, err := startBrowserUploadSession(body)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if skipReason != "" {
+			writeBrowserJSON(w, map[string]any{
+				"status":    "ok",
+				"skip":      true,
+				"action":    "ALLOW",
+				"reason":    skipReason,
+				"max_bytes": maxInspectionBytes(),
+			})
+			return
 		}
 
-		writeBrowserJSON(w, BrowserInspectResponse{
-			Status:          "ok",
-			Block:           shouldBlock,
-			Action:          overallAction,
-			Classifications: classes,
+		writeBrowserJSON(w, map[string]any{
+			"status":    "ok",
+			"upload_id": session.ID,
+			"max_bytes": maxInspectionBytes(),
 		})
+	})
+
+	mux.HandleFunc("/v1/upload/chunk", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if !requireBrowserExtension(w, r) {
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
+		defer r.Body.Close()
+
+		var body BrowserUploadChunkRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
+		}
+		if err := appendBrowserUploadChunk(body); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		writeBrowserJSON(w, map[string]any{
+			"status":   "ok",
+			"sequence": body.Sequence,
+		})
+	})
+
+	mux.HandleFunc("/v1/upload/finish", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if !requireBrowserExtension(w, r) {
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
+		defer r.Body.Close()
+
+		var body BrowserUploadFinishRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
+		}
+
+		writeBrowserJSON(w, finishBrowserUpload(
+			api,
+			endpointID,
+			hostname,
+			username,
+			body.UploadID,
+		))
+	})
+
+	mux.HandleFunc("/v1/upload/cancel", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if !requireBrowserExtension(w, r) {
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, 64*1024)
+		defer r.Body.Close()
+
+		var body BrowserUploadFinishRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, "invalid json", http.StatusBadRequest)
+			return
+		}
+
+		if session := removeBrowserUploadSession(strings.TrimSpace(body.UploadID)); session != nil {
+			_ = os.Remove(session.Path)
+		}
+		writeBrowserJSON(w, map[string]any{"status": "ok"})
 	})
 
 	server := &http.Server{
@@ -230,14 +669,22 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 	}
 
 	go func() {
-		log.Printf("browser messaging bridge active http://%s", addr)
+		ticker := time.NewTicker(time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			cleanupBrowserUploadSessions()
+		}
+	}()
+
+	go func() {
+		log.Printf("browser DLP bridge active http://%s (text + generic file upload)", addr)
 		if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
-			log.Printf("browser messaging bridge error: %v", err)
+			log.Printf("browser DLP bridge error: %v", err)
 		}
 	}()
 }
 
-func writeBrowserJSON(w http.ResponseWriter, payload BrowserInspectResponse) {
+func writeBrowserJSON(w http.ResponseWriter, payload any) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(payload)
 }
