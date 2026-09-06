@@ -376,7 +376,7 @@
   }, true);
 
   // Existing WhatsApp Web outgoing text guard remains active, but only there.
-  if (location.hostname.toLowerCase() === WHATSAPP_HOST) {
+  if (false && location.hostname.toLowerCase() === WHATSAPP_HOST) {
     function isComposer(node) {
       if (!(node instanceof Element)) return false;
       const editable = node.closest('[contenteditable="true"]');
