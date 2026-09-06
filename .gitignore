@@ -14,3 +14,9 @@ config/enrollment.key
 .pytest_cache/
 *.bak
 *.bak-*
+/BSC-DLP-EXFIL-TEST/
+/BSC-DLP-v*-version-backup/
+/APLICAR-HOTFIX-*.py
+/BSC-DLP-v*-Exfiltration-Engine.patch
+/bsc-*-check.py
+/bsc-find-probe-db.py

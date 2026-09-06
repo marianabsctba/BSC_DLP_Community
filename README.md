@@ -11,7 +11,7 @@
   <br><br>
 
   [![CI](https://github.com/marianabsctba/BSC_DLP_Community/actions/workflows/ci.yml/badge.svg)](https://github.com/marianabsctba/BSC_DLP_Community/actions/workflows/ci.yml)
-  ![Version](https://img.shields.io/badge/version-0.6.6.1-ff2d95?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.6.7-ff2d95?style=flat-square)
   ![License](https://img.shields.io/badge/license-AGPL--3.0-ff2d95?style=flat-square)
   ![Agent](https://img.shields.io/badge/agent-Go-00ADD8?style=flat-square&logo=go&logoColor=white)
   ![Backend](https://img.shields.io/badge/backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
