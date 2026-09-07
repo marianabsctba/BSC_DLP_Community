@@ -69,7 +69,7 @@ foreach ($Dir in @($HomeDir,$ConfigDir,$DataDir,$SecretsDir,$LogsDir,$RuntimeDir
 }
 
 Write-Host ""
-Write-Host "BSC DLP Community v0.6.9" -ForegroundColor Magenta
+Write-Host "BSC DLP Community v0.6.10" -ForegroundColor Magenta
 Write-Host "[1/6] Preparing local runtime..." -ForegroundColor Cyan
 
 $ExistingDatabase = Join-Path $DataDir "dlp.db"

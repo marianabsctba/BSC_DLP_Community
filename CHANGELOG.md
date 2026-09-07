@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.6.10] - 2026-09-07
+
+### Webmail DLP & Browser Guard
+- Novo canal `email` para inspeção de mensagens antes do envio em webmail.
+- Browser Guard com adaptadores para Gmail e Outlook Web.
+- Inspeção local de assunto e corpo antes do clique em Send.
+- Políticas padrão de e-mail com `ALLOW`, `ALERT` e `BLOCK`.
+- CPF válido permanece em ALERT no canal de e-mail; CPF inválido é ignorado.
+- Cartão válido por Luhn pode ser bloqueado; número inválido é ignorado.
+- WhatsApp Web Guard reativado com fluxo de envio seguro sem interceptação invasiva de atalhos Ctrl.
+- `Ctrl+C`, `Ctrl+V`, `Ctrl+X`, `Ctrl+A` e demais atalhos modificadores permanecem nativos do navegador/aplicação.
+- Fail-open com aviso visível quando o Browser Bridge local estiver indisponível.
+
+### Deterministic Validation
+- CPF exige checksum válido para classificação definitiva.
+- Cartões exigem validação Luhn.
+- CPF de 11 dígitos com checksum inválido não é mais promovido para `CPF_LIKE`.
+- Casos realmente malformados de 10/12 dígitos com contexto explícito permanecem cobertos pelo mecanismo anti-evasão.
+- Testes de regressão adicionados para CPF e cartão com checksum inválido.
+
+### Validation
+- Gmail Browser Guard validado em fluxo real de envio.
+- CPF válido: ALERT.
+- CPF inválido: ALLOW.
+- Cartão Luhn válido: BLOCK.
+- Cartão Luhn inválido: ALLOW.
 ## [0.6.9] - 2026-09-07
 
 ### Dashboard Analytics

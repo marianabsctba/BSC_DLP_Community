@@ -32,7 +32,7 @@ jobs:
       - name: Build portable release
         shell: powershell
         run: |
-          $version = "0.6.9"
+          $version = "0.6.10"
           if ("${{ github.ref_type }}" -eq "tag") {
             $version = ("${{ github.ref_name }}") -replace '^v',''
           }
