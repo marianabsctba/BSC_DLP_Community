@@ -1,7 +1,7 @@
-﻿{
+{
     "manifest_version":  3,
     "name":  "BSC DLP Browser Guard",
-    "version":  "0.6.7",
+    "version":  "0.6.8",
     "description":  "Local-first browser DLP with outgoing text, generic file upload and Browser Guard presence monitoring.",
     "permissions":  [
                         "storage",

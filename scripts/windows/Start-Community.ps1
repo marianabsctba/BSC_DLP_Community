@@ -69,7 +69,7 @@ foreach ($Dir in @($HomeDir,$ConfigDir,$DataDir,$SecretsDir,$LogsDir,$RuntimeDir
 }
 
 Write-Host ""
-Write-Host "BSC DLP Community v0.6.7" -ForegroundColor Magenta
+Write-Host "BSC DLP Community v0.6.8" -ForegroundColor Magenta
 Write-Host "[1/6] Preparing local runtime..." -ForegroundColor Cyan
 
 $ExistingDatabase = Join-Path $DataDir "dlp.db"
@@ -125,7 +125,7 @@ function Test-BscPortFree {
 function Test-BscHealth {
     try {
         $h = Invoke-RestMethod -Method Get -Uri "$ApiUrl/health" -TimeoutSec 1
-        return ($h.status -eq "ok" -and $h.engine -eq "BSC DLP" -and $h.version -eq "0.6.7")
+        return ($h.status -eq "ok" -and $h.engine -eq "BSC DLP" -and $h.version -eq "0.6.8")
     }
     catch { return $false }
 }

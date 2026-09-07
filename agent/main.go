@@ -21,7 +21,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-const version = "0.6.7"
+const version = "0.6.8"
 
 var recentEvents = map[string]time.Time{}
 var recentEventsMu sync.Mutex

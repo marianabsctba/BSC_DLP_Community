@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "0.5.4",
+    [string]$Version = "0.6.8",
     [ValidateSet("amd64")]
     [string]$Architecture = "amd64"
 )

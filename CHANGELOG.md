@@ -1,5 +1,20 @@
-﻿# Changelog
+# Changelog
 
+## [0.6.8] - 2026-09-07
+
+### AI Gateway
+- Novo canal `ai_prompt` para inspeção DLP de prompts enviados a ferramentas de IA generativa.
+- Integração Browser Guard com ChatGPT, Claude, Gemini e Microsoft Copilot.
+- Inspeção local antes do envio com decisões `ALLOW`, `ALERT` e `BLOCK`.
+- Políticas padrão para CPF, CNPJ, RG, passaporte, CNH, CNS, e-mail, telefone, dados bancários, PIX, cartões, credenciais e secrets.
+- Prompt bruto não é armazenado por padrão; eventos preservam metadados, valores mascarados, fingerprints, política, risco e destino.
+- Destinos de IA são tratados como externos para cálculo de contexto e risco.
+- Eventos usam semântica própria de AI Gateway: `ai_prompt`, `browser_ai_prompt` e `/prompt`.
+- Novo painel administrativo AI Gateway com prompts inspecionados, bloqueios, alertas, providers recentes e eventos.
+- Dashboard com atividade por ChatGPT, Claude, Gemini e Copilot.
+- BLOCK validado nos quatro providers.
+- ALERT e ALLOW validados no fluxo Browser Guard.
+- Community permanece fail-open com aviso quando o bridge local estiver indisponível.
 ## [0.6.7] - 2026-09-06
 
 ### Exfiltration Engine

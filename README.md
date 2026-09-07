@@ -11,7 +11,7 @@
   <br><br>
 
   [![CI](https://github.com/marianabsctba/BSC_DLP_Community/actions/workflows/ci.yml/badge.svg)](https://github.com/marianabsctba/BSC_DLP_Community/actions/workflows/ci.yml)
-  ![Version](https://img.shields.io/badge/version-0.6.7-ff2d95?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.6.8-ff2d95?style=flat-square)
   ![License](https://img.shields.io/badge/license-AGPL--3.0-ff2d95?style=flat-square)
   ![Agent](https://img.shields.io/badge/agent-Go-00ADD8?style=flat-square&logo=go&logoColor=white)
   ![Backend](https://img.shields.io/badge/backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
@@ -56,6 +56,12 @@ DLP open source con agente Windows/Linux, inspección local de documentos, OCR, 
 
 <div align="center">
   <img src="docs/screenshots/02-dashboard.png" width="92%" alt="BSC DLP dashboard" />
+</div>
+
+### AI Gateway — Generative AI DLP
+
+<div align="center">
+  <img src="docs/screenshots/06-ai-gateway.png" width="92%" alt="BSC DLP AI Gateway" />
 </div>
 
 ### Events, filters and pagination
@@ -147,7 +153,33 @@ The Browser Guard bridge is local to the endpoint and is **not intended as a pub
 | Desktop messaging clipboard | ✅ Windows | Clipboard inspection while supported messaging apps are foreground |
 | WhatsApp Web text | ✅ Chromium Browser Guard | Paste/send inspection before outgoing action |
 | Generic browser upload | ✅ Chromium Browser Guard | File picker / upload interception with local inspection |
+| AI Gateway prompt DLP | ✅ Chromium Browser Guard | Pre-send inspection for ChatGPT, Claude, Gemini and Copilot |
 
+### 🤖 AI Gateway
+
+BSC DLP can inspect prompts before they are submitted to supported generative AI web applications.
+
+Current supported destinations include:
+
+- ChatGPT;
+- Claude;
+- Gemini;
+- Microsoft Copilot.
+
+The AI Gateway reuses the local BSC DLP detection and policy pipeline and supports:
+
+- local prompt inspection before send;
+- native and custom sensitive-data classifiers;
+- `ALLOW`, `ALERT` and `BLOCK` decisions;
+- provider-aware destination telemetry;
+- contextual risk scoring;
+- dedicated `ai_prompt` events;
+- AI Gateway dashboard metrics and recent activity;
+- masked sensitive values and fingerprints instead of raw matched values.
+
+By default, the raw prompt is not intentionally persisted by BSC DLP. Event telemetry records the information required for investigation, such as classification, policy decision, risk, provider, fingerprints and masked detections.
+
+> AI Gateway enforcement is currently Browser Guard / DOM-level integration. Provider web interfaces can change and may require adapter updates. When the local bridge is unavailable, the current Community behavior is fail-open with a visible warning.
 ### 💬 WhatsApp Web Browser Guard
 
 BSC DLP can inspect outgoing text in **WhatsApp Web** before paste/send actions.
@@ -561,6 +593,7 @@ The console includes:
 - incidents;
 - managed endpoints;
 - policies;
+- AI Gateway;
 - native and custom detectors;
 - document/OCR capabilities;
 - events;
@@ -675,7 +708,7 @@ Current Browser Guard deployment uses an unpacked Chromium extension.
 Current Browser Guard line:
 
 ```text
-0.6.6.1
+0.6.8
 ```
 
 > Each Chromium browser/profile manages extensions independently. Loading the Browser Guard in Chrome does **not** automatically install it in Edge, and vice versa.
@@ -734,6 +767,7 @@ BSC DLP Community is designed to minimize unnecessary sensitive-data movement:
 - document extraction occurs locally on the endpoint;
 - OCR occurs locally;
 - Browser Upload inspection flows through localhost;
+- AI Gateway prompt inspection flows through the local Browser Guard bridge before supported GenAI submissions;
 - temporary browser-upload inspection files are deleted after processing;
 - clipboard screenshot images are not intentionally persisted by the clipboard sensor;
 - the console receives masked values and fingerprints rather than raw matched values;
@@ -818,7 +852,7 @@ The bridge test validates the local upload inspection path independently from br
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\windows\Build-Community-Release.ps1 `
-  -Version 0.6.6.1
+  -Version 0.6.8
 ```
 
 GitHub workflows include:
@@ -833,7 +867,6 @@ GitHub workflows include:
 - [ ] Signed Windows minifilter for true pre-write enforcement
 - [ ] Advanced Device Control: VID/PID/serial, allowlist and read-only policies
 - [ ] Native Email DLP — recipient/internal-external/body/subject/attachment aware
-- [ ] AI DLP / AI Gateway — prompt/upload/model-aware controls
 - [ ] Semantic classifiers / NER for classes that should not rely on regex
 - [ ] Archive/container inspection — ZIP/7z and encrypted-archive policy handling
 - [ ] Packaged Browser Guard deployment
@@ -855,7 +888,7 @@ To keep the project technically honest:
 - WhatsApp Web protection does not bypass E2EE;
 - screenshot clipboard blocking happens after capture/OCR;
 - broad semantic health/biometric/genetic/protected-attribute classification is not falsely claimed through simple regex;
-- Email DLP and AI DLP remain roadmap modules;
+- Native Email DLP remains a roadmap module; AI Gateway currently protects supported GenAI web prompt submissions through Browser Guard.
 - the local SQLite deployment is a Community/default architecture, not a claim of hyperscale storage;
 - public/Internet deployment requires additional production hardening and TLS architecture.
 
