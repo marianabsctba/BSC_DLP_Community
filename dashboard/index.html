@@ -17,9 +17,389 @@
 .btn{border:1px solid #422b40;background:#160d16;color:#e8d6e2;border-radius:10px;padding:9px 12px;font-size:12px;font-weight:750}.btn:hover{border-color:#704061;color:#fff}.btn.primary{background:linear-gradient(135deg,var(--pink),var(--pink2));border-color:transparent;color:#220011}.btn.danger{border-color:#6b2739;color:#ff8da2;background:#241018}.btn.ghost{background:transparent}.btn.full{width:100%;padding:12px;margin-top:8px}
 .app{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh}.sidebar{position:sticky;top:0;height:100vh;overflow-y:auto;overscroll-behavior:contain;padding:20px 14px;border-right:1px solid #271727;background:rgba(8,3,8,.94);backdrop-filter:blur(18px);display:flex;flex-direction:column}.brand{display:flex;align-items:center;gap:11px;padding:5px 9px 25px}.mark{width:42px;height:42px;border-radius:13px;overflow:hidden;border:1px solid #6b2852;background:#080307;display:grid;place-items:center;box-shadow:0 0 25px rgba(255,45,149,.25)}.mark img{width:100%;height:100%;object-fit:cover;display:block}.brand strong{display:block;font-size:15px}.brand small{display:block;color:#8f7385;font-size:10px;margin-top:2px}.nav-label{padding:12px 10px 7px;color:#6d5365;font-size:9px;font-weight:900;letter-spacing:1.5px}.nav{display:grid;gap:4px}.nav a{display:flex;gap:11px;align-items:center;text-decoration:none;color:#aa8fa0;padding:11px 12px;border-radius:10px;border:1px solid transparent;font-size:13px}.nav a:hover{background:#160b15;color:#fff}.nav a.active{color:#fff;background:linear-gradient(90deg,rgba(255,45,149,.18),rgba(255,45,149,.025));border-color:#54213f}.nav-icon{width:19px;text-align:center}.sidebar-foot{margin-top:auto;border-top:1px solid #251526;padding:15px 9px 4px}.engine{display:flex;gap:9px;align-items:center}.dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 14px rgba(85,230,165,.75)}.engine strong{font-size:11px}.engine small{color:#806a78;display:block;font-size:10px;margin-top:2px}.main{min-width:0}.topbar{height:70px;position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid #281728;background:rgba(5,2,6,.8);backdrop-filter:blur(16px)}.page-title strong{font-size:14px}.page-title span{font-size:11px;color:#876f7f;margin-left:8px}.top-actions{display:flex;align-items:center;gap:10px}.admin-chip{display:flex;align-items:center;gap:8px;border:1px solid #352235;background:#120812;border-radius:10px;padding:6px 9px}.avatar{width:29px;height:29px;border-radius:9px;background:#3a112b;color:#ff8bc8;display:grid;place-items:center;font-weight:900;font-size:11px}.admin-chip small{color:#b193a6}.content{padding:27px;max-width:1720px;margin:auto}.view{display:none}.view.active{display:block;animation:fade .16s ease}@keyframes fade{from{opacity:.5;transform:translateY(3px)}to{opacity:1;transform:none}}.hero{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:22px}.hero h1{font-size:28px;margin:0;letter-spacing:-.8px}.hero p{font-size:13px;color:var(--muted);margin:7px 0 0;max-width:680px}.pill{display:inline-flex;align-items:center;gap:7px;border:1px solid #5a2548;background:#1c0b18;color:#ff78be;border-radius:999px;padding:7px 11px;font-size:10px;font-weight:850}.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.kpi,.panel,.tile,.incident,.endpoint{border:1px solid var(--line);background:linear-gradient(145deg,rgba(255,45,149,.035),transparent 42%),var(--panel);border-radius:14px}.kpi{padding:18px;min-height:128px}.kpi-top{display:flex;justify-content:space-between;color:#9b8192;font-size:11px}.kpi-icon{width:32px;height:32px;border-radius:9px;background:#210d1b;border:1px solid #42203a;display:grid;place-items:center;color:#ff73ba}.kpi-value{font-size:32px;font-weight:900;margin-top:14px;letter-spacing:-1px}.kpi-foot{font-size:10px;color:#81697a;margin-top:7px}.pink{color:var(--pink2)}.red{color:#ff6d86}.green{color:var(--ok)}.yellow{color:var(--warning)}.two{display:grid;grid-template-columns:1.35fr .85fr;gap:14px;margin-top:14px}.panel{padding:18px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}.panel-head h2{margin:0;font-size:14px}.panel-head span{color:#8d7485;font-size:10px}.risk-box{display:flex;align-items:center;gap:22px;min-height:180px}.risk-ring{--risk:0%;position:relative;width:145px;height:145px;border-radius:50%;background:conic-gradient(var(--pink) var(--risk),#251324 0);display:grid;place-items:center;box-shadow:0 0 30px rgba(255,45,149,.08)}.risk-ring:after{content:"";position:absolute;width:105px;height:105px;border-radius:50%;background:#100811}.risk-ring div{z-index:1;text-align:center}.risk-ring strong{display:block;font-size:31px}.risk-ring small{color:#9e8394;font-size:10px}.risk-copy h3{font-size:16px;margin:0 0 7px}.risk-copy p{color:#9b8292;font-size:12px;line-height:1.5;margin:0}.bars{display:grid;gap:10px}.barrow{display:grid;grid-template-columns:110px 1fr 38px;gap:10px;align-items:center;font-size:11px;color:#a98d9f}.bartrack{height:7px;border-radius:99px;background:#251324;overflow:hidden}.barfill{height:100%;border-radius:99px;background:linear-gradient(90deg,#a61967,var(--pink2))}.table-wrap{overflow:auto}table{width:100%;border-collapse:collapse}th{text-align:left;text-transform:uppercase;letter-spacing:.7px;color:#765d6e;font-size:9px;padding:10px 11px;border-bottom:1px solid #291729}td{padding:12px 11px;border-bottom:1px solid #211221;font-size:12px;color:#e9dce5}tbody tr:hover{background:#150a14}.badge{display:inline-flex;border-radius:7px;padding:5px 7px;font-size:9px;font-weight:900;letter-spacing:.2px}.critical,.block{background:#401420;color:#ff8098}.high,.alert{background:#3c2912;color:#ffd172}.medium,.audit{background:#2a1832;color:#dc9eff}.allow,.online{background:#0f3225;color:#72eab4}.offline{background:#2d2229;color:#aa8e9f}.risk-high{background:#4b1529;color:#ff8aac}.risk-med{background:#3c2912;color:#ffd172}.risk-low{background:#123027;color:#77e8b6}.list{display:grid;gap:10px}.incident{padding:15px;display:grid;grid-template-columns:56px 1fr auto;gap:14px;align-items:center}.risk-number{width:48px;height:48px;border-radius:13px;background:#2b0e20;border:1px solid #562140;display:grid;place-items:center;font-weight:950;color:#ff76bd}.incident strong,.endpoint strong{display:block;font-size:13px}.incident small,.endpoint small{display:block;color:#8d7384;margin-top:4px;font-size:10px}.incident-meta{text-align:right}.endpoint{padding:14px;display:grid;grid-template-columns:42px 1fr auto;gap:13px;align-items:center}.endpoint-icon{width:42px;height:42px;border-radius:11px;background:#21101e;border:1px solid #3e2038;display:grid;place-items:center;color:#ff72ba}.endpoint-actions{display:flex;align-items:center;gap:8px}.policy-grid,.doc-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}.tile{padding:17px}.tile h3{font-size:14px;margin:0 0 8px}.tile p{color:#9a8091;font-size:11px;line-height:1.5;min-height:34px}.tile-meta{display:flex;justify-content:space-between;align-items:center;margin-top:14px;color:#806778;font-size:10px}.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}.empty{border:1px dashed #44243c;border-radius:13px;padding:28px;text-align:center;color:#886f80;font-size:12px}.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.enforcement-note{border:1px solid #5a2746;background:#190b16;border-radius:12px;padding:13px;color:#c9a7bb;font-size:11px;line-height:1.55}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 0;border-bottom:1px solid #271627}.setting-row strong{font-size:12px}.setting-row small{display:block;color:#886f80;font-size:10px;margin-top:3px}
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(2,0,2,.82);backdrop-filter:blur(8px);z-index:100;align-items:center;justify-content:center;padding:20px}.modal-bg.open{display:flex}.modal{width:min(620px,100%);max-height:90vh;overflow:auto;background:#100710;border:1px solid #552243;border-radius:19px;box-shadow:0 35px 100px rgba(0,0,0,.65)}.modal-head{display:flex;justify-content:space-between;align-items:center;padding:18px 20px;border-bottom:1px solid #30182b}.modal-head h3{margin:0;font-size:15px}.modal-close{background:none;border:0;color:#a88699;font-size:22px}.modal-body{padding:20px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.fullcol{grid-column:1/-1}.token-box{word-break:break-all;border:1px solid #542444;background:#080307;border-radius:10px;padding:12px;color:#ff8dcc;font-family:ui-monospace,Consolas,monospace;font-size:11px}.command-box{white-space:pre-wrap;word-break:break-word;border:1px solid #3d2537;background:#080307;border-radius:10px;padding:12px;color:#e7d5df;font-family:ui-monospace,Consolas,monospace;font-size:10px;line-height:1.6;margin-top:10px}.toast{position:fixed;right:20px;bottom:20px;z-index:200;background:#1a0b17;border:1px solid #5b2748;border-radius:12px;padding:12px 14px;color:#f7ddea;font-size:11px;box-shadow:0 20px 50px rgba(0,0,0,.45);display:none}.toast.show{display:block}
+.chart-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  margin:14px 0;
+}
+.chart-card{
+  border:1px solid var(--line);
+  background:linear-gradient(145deg,rgba(255,45,149,.035),transparent 42%),var(--panel);
+  border-radius:14px;
+  padding:18px;
+  min-width:0;
+}
+.chart-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+.chart-card-head h3{
+  margin:0;
+  font-size:13px;
+}
+.chart-card-head small{
+  display:block;
+  color:#846d7c;
+  font-size:9px;
+  margin-top:4px;
+}
+.chart-body{
+  min-height:205px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.chart-empty{
+  min-height:180px;
+  display:grid;
+  place-items:center;
+  color:#806a78;
+  font-size:11px;
+}
+.chart-bars{
+  display:grid;
+  gap:11px;
+}
+.chart-bar-row{
+  display:grid;
+  grid-template-columns:minmax(76px,120px) 1fr 42px;
+  gap:9px;
+  align-items:center;
+}
+.chart-bar-label{
+  color:#b59aaa;
+  font-size:10px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.chart-bar-track{
+  height:9px;
+  background:#251324;
+  border-radius:999px;
+  overflow:hidden;
+}
+.chart-bar-fill{
+  height:100%;
+  min-width:2px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#a61967,var(--pink2));
+  box-shadow:0 0 14px rgba(255,45,149,.13);
+}
+.chart-bar-value{
+  text-align:right;
+  color:#f4dce9;
+  font-size:10px;
+  font-weight:800;
+}
+.chart-donut-wrap{
+  min-height:190px;
+  display:grid;
+  grid-template-columns:132px 1fr;
+  gap:18px;
+  align-items:center;
+}
+.chart-donut{
+  width:128px;
+  height:128px;
+  border-radius:50%;
+  position:relative;
+  display:grid;
+  place-items:center;
+}
+.chart-donut:after{
+  content:"";
+  position:absolute;
+  inset:25px;
+  border-radius:50%;
+  background:#100811;
+  border:1px solid #29172a;
+}
+.chart-donut-center{
+  position:relative;
+  z-index:2;
+  text-align:center;
+}
+.chart-donut-center strong{
+  display:block;
+  font-size:25px;
+}
+.chart-donut-center small{
+  color:#856d7c;
+  font-size:9px;
+}
+.chart-legend{
+  display:grid;
+  gap:9px;
+}
+.chart-legend-row{
+  display:grid;
+  grid-template-columns:9px 1fr auto;
+  gap:8px;
+  align-items:center;
+  font-size:10px;
+  color:#b69cab;
+}
+.chart-legend-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+}
+.chart-legend-row strong{
+  color:#f3dfeb;
+  font-size:10px;
+}
+.chart-line-wrap{
+  width:100%;
+}
+.chart-line-svg{
+  display:block;
+  width:100%;
+  height:155px;
+  overflow:visible;
+}
+.chart-line-grid{
+  stroke:#2c192c;
+  stroke-width:1;
+}
+.chart-line-area{
+  fill:rgba(255,45,149,.08);
+}
+.chart-line-path{
+  fill:none;
+  stroke:var(--pink2);
+  stroke-width:2.4;
+  stroke-linejoin:round;
+  stroke-linecap:round;
+}
+.chart-line-point{
+  fill:#100811;
+  stroke:var(--pink2);
+  stroke-width:2;
+}
+.chart-line-labels{
+  display:flex;
+  justify-content:space-between;
+  gap:4px;
+  margin-top:8px;
+  color:#7f6878;
+  font-size:8px;
+}
+.chart-line-labels span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.chart-note{
+  margin-top:10px;
+  color:#755f6e;
+  font-size:9px;
+}
+
+@media(max-width:1250px){
+  .chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .chart-grid{grid-template-columns:1fr}
+  .chart-donut-wrap{grid-template-columns:1fr;justify-items:center}
+}
 @media(max-width:1100px){.grid4{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.policy-grid,.doc-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:760px){:root{--sidebar:70px}.brand div:last-child,.nav-label,.nav a span:last-child,.sidebar-foot .engine div{display:none}.nav a{justify-content:center}.grid4,.policy-grid,.doc-grid{grid-template-columns:1fr}.content{padding:18px}.topbar{padding:0 18px}.page-title span{display:none}.admin-chip small{display:none}.form-grid{grid-template-columns:1fr}.fullcol{grid-column:auto}.incident{grid-template-columns:48px 1fr}.incident-meta{grid-column:2;text-align:left}.endpoint{grid-template-columns:42px 1fr}.endpoint-actions{grid-column:2}}
 
-.filters{margin-bottom:14px}.filter-grid{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:9px}.filter-grid input,.filter-grid select{border:1px solid #3b2739;border-radius:9px;background:#090409;color:#fff;padding:9px 10px;outline:none;font-size:11px}.filter-grid input:focus,.filter-grid select:focus{border-color:var(--pink)}.pager{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:12px;color:#9a8091;font-size:11px}.pager button:disabled{opacity:.35;cursor:not-allowed}.muted-inline{color:#8f7485;font-size:10px;margin-left:auto}.mini-list{display:grid;gap:8px}.mini-row{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #291729;padding:9px 2px;font-size:11px}.mini-row strong{color:#f8e9f2}.report-grid{margin-top:14px}.report-grid .kpi{min-height:105px}.report-grid .kpi-value{font-size:27px}.pattern-cell{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.detector-actions{display:flex;gap:6px}.native-badge{background:#251024;color:#ff82c3}.custom-badge{background:#122b2d;color:#81e7ee}@media(max-width:1100px){.filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.filter-grid{grid-template-columns:1fr}.muted-inline{width:100%;margin-left:0}}
+.filters{margin-bottom:14px}.filter-grid{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:9px}.filter-grid input,.filter-grid select{border:1px solid #3b2739;border-radius:9px;background:#090409;color:#fff;padding:9px 10px;outline:none;font-size:11px}.filter-grid input:focus,.filter-grid select:focus{border-color:var(--pink)}.pager{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:12px;color:#9a8091;font-size:11px}.pager button:disabled{opacity:.35;cursor:not-allowed}.muted-inline{color:#8f7485;font-size:10px;margin-left:auto}.mini-list{display:grid;gap:8px}.mini-row{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #291729;padding:9px 2px;font-size:11px}.mini-row strong{color:#f8e9f2}.report-grid{margin-top:14px}.report-grid .kpi{min-height:105px}.report-grid .kpi-value{font-size:27px}.pattern-cell{max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.detector-actions{display:flex;gap:6px}.native-badge{background:#251024;color:#ff82c3}.custom-badge{background:#122b2d;color:#81e7ee}.chart-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+  margin:14px 0;
+}
+.chart-card{
+  border:1px solid var(--line);
+  background:linear-gradient(145deg,rgba(255,45,149,.035),transparent 42%),var(--panel);
+  border-radius:14px;
+  padding:18px;
+  min-width:0;
+}
+.chart-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:16px;
+}
+.chart-card-head h3{
+  margin:0;
+  font-size:13px;
+}
+.chart-card-head small{
+  display:block;
+  color:#846d7c;
+  font-size:9px;
+  margin-top:4px;
+}
+.chart-body{
+  min-height:205px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.chart-empty{
+  min-height:180px;
+  display:grid;
+  place-items:center;
+  color:#806a78;
+  font-size:11px;
+}
+.chart-bars{
+  display:grid;
+  gap:11px;
+}
+.chart-bar-row{
+  display:grid;
+  grid-template-columns:minmax(76px,120px) 1fr 42px;
+  gap:9px;
+  align-items:center;
+}
+.chart-bar-label{
+  color:#b59aaa;
+  font-size:10px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.chart-bar-track{
+  height:9px;
+  background:#251324;
+  border-radius:999px;
+  overflow:hidden;
+}
+.chart-bar-fill{
+  height:100%;
+  min-width:2px;
+  border-radius:999px;
+  background:linear-gradient(90deg,#a61967,var(--pink2));
+  box-shadow:0 0 14px rgba(255,45,149,.13);
+}
+.chart-bar-value{
+  text-align:right;
+  color:#f4dce9;
+  font-size:10px;
+  font-weight:800;
+}
+.chart-donut-wrap{
+  min-height:190px;
+  display:grid;
+  grid-template-columns:132px 1fr;
+  gap:18px;
+  align-items:center;
+}
+.chart-donut{
+  width:128px;
+  height:128px;
+  border-radius:50%;
+  position:relative;
+  display:grid;
+  place-items:center;
+}
+.chart-donut:after{
+  content:"";
+  position:absolute;
+  inset:25px;
+  border-radius:50%;
+  background:#100811;
+  border:1px solid #29172a;
+}
+.chart-donut-center{
+  position:relative;
+  z-index:2;
+  text-align:center;
+}
+.chart-donut-center strong{
+  display:block;
+  font-size:25px;
+}
+.chart-donut-center small{
+  color:#856d7c;
+  font-size:9px;
+}
+.chart-legend{
+  display:grid;
+  gap:9px;
+}
+.chart-legend-row{
+  display:grid;
+  grid-template-columns:9px 1fr auto;
+  gap:8px;
+  align-items:center;
+  font-size:10px;
+  color:#b69cab;
+}
+.chart-legend-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+}
+.chart-legend-row strong{
+  color:#f3dfeb;
+  font-size:10px;
+}
+.chart-line-wrap{
+  width:100%;
+}
+.chart-line-svg{
+  display:block;
+  width:100%;
+  height:155px;
+  overflow:visible;
+}
+.chart-line-grid{
+  stroke:#2c192c;
+  stroke-width:1;
+}
+.chart-line-area{
+  fill:rgba(255,45,149,.08);
+}
+.chart-line-path{
+  fill:none;
+  stroke:var(--pink2);
+  stroke-width:2.4;
+  stroke-linejoin:round;
+  stroke-linecap:round;
+}
+.chart-line-point{
+  fill:#100811;
+  stroke:var(--pink2);
+  stroke-width:2;
+}
+.chart-line-labels{
+  display:flex;
+  justify-content:space-between;
+  gap:4px;
+  margin-top:8px;
+  color:#7f6878;
+  font-size:8px;
+}
+.chart-line-labels span{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.chart-note{
+  margin-top:10px;
+  color:#755f6e;
+  font-size:9px;
+}
+
+@media(max-width:1250px){
+  .chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  .chart-grid{grid-template-columns:1fr}
+  .chart-donut-wrap{grid-template-columns:1fr;justify-items:center}
+}
+@media(max-width:1100px){.filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.filter-grid{grid-template-columns:1fr}.muted-inline{width:100%;margin-left:0}}
 </style>
 </head>
 <body>
@@ -41,7 +421,7 @@
 
 <div id="app" class="app hidden">
   <aside class="sidebar">
-    <div class="brand"><div class="mark"><img src="/assets/bsc-dlp-icon.png" alt="BSC DLP"></div><div><strong>BSC DLP</strong><small>v0.6.8</small></div></div>
+    <div class="brand"><div class="mark"><img src="/assets/bsc-dlp-icon.png" alt="BSC DLP"></div><div><strong>BSC DLP</strong><small>v0.6.9</small></div></div>
     <div class="nav-label">VISÃO</div>
     <nav class="nav">
       <a class="active" href="#overview" data-view="overview"><span class="nav-icon">◈</span><span>Visão geral</span></a>
@@ -284,6 +664,214 @@ async function setLanguage(lang){if(!['pt','en','es'].includes(lang))return;curr
 const $=id=>document.getElementById(id); const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 function toast(msg){$('toast').textContent=tr(msg);$('toast').classList.add('show');setTimeout(()=>$('toast').classList.remove('show'),2600)}
 async function api(path,opts={}){const r=await fetch(`${API}${path}`,{credentials:'same-origin',headers:{'Content-Type':'application/json',...(opts.headers||{})},...opts});if(r.status===401&&!path.startsWith('/auth/')){showAuth(false);throw new Error(tr('Sessão expirada'))}if(!r.ok){let d={};try{d=await r.json()}catch{}throw new Error(d.detail?trError(d.detail):`HTTP ${r.status}`)}return r.status===204?null:r.json()}
+const BSC_CHART_COLORS=[
+  'var(--pink)',
+  'var(--blue)',
+  'var(--ok)',
+  'var(--warning)',
+  'var(--pink3)',
+  'var(--danger)',
+  '#bd7cff',
+  '#65d6ff'
+];
+
+function chartEntries(input,{limit=8}={}){
+  const rows=Array.isArray(input)
+    ? input
+    : Object.entries(input||{}).map(([label,value])=>({label,value}));
+
+  return rows
+    .map(row=>({
+      label:String(row.label??'-'),
+      value:Number(row.value||0)
+    }))
+    .filter(row=>Number.isFinite(row.value)&&row.value>=0)
+    .sort((a,b)=>b.value-a.value)
+    .slice(0,limit);
+}
+
+function ensureChartGrid(viewId,key,cards,afterSelector='.hero'){
+  const view=$(viewId);
+  if(!view)return null;
+
+  const existing=view.querySelector(`[data-chart-grid="${key}"]`);
+  if(existing)return existing;
+
+  const grid=document.createElement('div');
+  grid.className='chart-grid';
+  grid.dataset.chartGrid=key;
+
+  grid.innerHTML=cards.map(card=>`
+    <div class="chart-card">
+      <div class="chart-card-head">
+        <div>
+          <h3>${esc(tr(card.title))}</h3>
+          <small>${esc(tr(card.subtitle||''))}</small>
+        </div>
+      </div>
+      <div class="chart-body" id="${esc(card.id)}"></div>
+    </div>
+  `).join('');
+
+  const anchor=view.querySelector(afterSelector);
+  if(anchor)anchor.insertAdjacentElement('afterend',grid);
+  else view.appendChild(grid);
+
+  return grid;
+}
+
+function chartEmpty(id,message='Sem dados suficientes.'){
+  const el=$(id);
+  if(!el)return;
+  el.innerHTML=`<div class="chart-empty">${esc(tr(message))}</div>`;
+}
+
+function renderBarChart(id,input,{limit=8}={}){
+  const el=$(id);
+  if(!el)return;
+
+  const rows=chartEntries(input,{limit});
+  if(!rows.length){
+    chartEmpty(id);
+    return;
+  }
+
+  const max=Math.max(...rows.map(row=>row.value),1);
+
+  el.innerHTML=`
+    <div class="chart-bars">
+      ${rows.map(row=>`
+        <div class="chart-bar-row" title="${esc(row.label)}: ${row.value}">
+          <div class="chart-bar-label">${esc(row.label)}</div>
+          <div class="chart-bar-track">
+            <div class="chart-bar-fill" style="width:${Math.max(2,(row.value/max)*100)}%"></div>
+          </div>
+          <div class="chart-bar-value">${row.value}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderDonutChart(id,input,{centerLabel='Total'}={}){
+  const el=$(id);
+  if(!el)return;
+
+  const rows=chartEntries(input,{limit:8}).filter(row=>row.value>0);
+  const total=rows.reduce((sum,row)=>sum+row.value,0);
+
+  if(!rows.length||!total){
+    chartEmpty(id);
+    return;
+  }
+
+  let cursor=0;
+  const stops=[];
+
+  rows.forEach((row,index)=>{
+    const start=(cursor/total)*100;
+    cursor+=row.value;
+    const end=(cursor/total)*100;
+    const color=BSC_CHART_COLORS[index%BSC_CHART_COLORS.length];
+    stops.push(`${color} ${start}% ${end}%`);
+  });
+
+  el.innerHTML=`
+    <div class="chart-donut-wrap">
+      <div class="chart-donut" style="background:conic-gradient(${stops.join(',')})">
+        <div class="chart-donut-center">
+          <strong>${total}</strong>
+          <small>${esc(tr(centerLabel))}</small>
+        </div>
+      </div>
+      <div class="chart-legend">
+        ${rows.map((row,index)=>`
+          <div class="chart-legend-row">
+            <span class="chart-legend-dot" style="background:${BSC_CHART_COLORS[index%BSC_CHART_COLORS.length]}"></span>
+            <span title="${esc(row.label)}">${esc(row.label)}</span>
+            <strong>${row.value}</strong>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderLineChart(id,input,{note=''}={}){
+  const el=$(id);
+  if(!el)return;
+
+  const rows=(Array.isArray(input)?input:[])
+    .map(row=>({
+      label:String(row.label??''),
+      value:Number(row.value||0)
+    }))
+    .filter(row=>Number.isFinite(row.value));
+
+  if(!rows.length){
+    chartEmpty(id);
+    return;
+  }
+
+  const width=600;
+  const height=150;
+  const padX=12;
+  const padY=12;
+  const max=Math.max(...rows.map(row=>row.value),1);
+  const usableW=width-(padX*2);
+  const usableH=height-(padY*2);
+
+  const points=rows.map((row,index)=>{
+    const x=rows.length===1
+      ? width/2
+      : padX+(index/(rows.length-1))*usableW;
+    const y=height-padY-(row.value/max)*usableH;
+    return {x,y,...row};
+  });
+
+  const line=points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const area=[
+    `${points[0].x.toFixed(1)},${height-padY}`,
+    ...points.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`),
+    `${points[points.length-1].x.toFixed(1)},${height-padY}`
+  ].join(' ');
+
+  el.innerHTML=`
+    <div class="chart-line-wrap">
+      <svg class="chart-line-svg" viewBox="0 0 ${width} ${height}" role="img">
+        <line class="chart-line-grid" x1="0" y1="${height-padY}" x2="${width}" y2="${height-padY}"></line>
+        <line class="chart-line-grid" x1="0" y1="${height/2}" x2="${width}" y2="${height/2}"></line>
+        <polygon class="chart-line-area" points="${area}"></polygon>
+        <polyline class="chart-line-path" points="${line}"></polyline>
+        ${points.map(p=>`
+          <circle class="chart-line-point" cx="${p.x}" cy="${p.y}" r="3.5">
+            <title>${esc(p.label)}: ${p.value}</title>
+          </circle>
+        `).join('')}
+      </svg>
+      <div class="chart-line-labels">
+        ${rows.map(row=>`<span>${esc(row.label)}</span>`).join('')}
+      </div>
+      ${note?`<div class="chart-note">${esc(tr(note))}</div>`:''}
+    </div>
+  `;
+}
+
+function countBy(rows,key,normalizer=value=>String(value||'Desconhecido')){
+  const result={};
+  for(const row of rows||[]){
+    const label=normalizer(row?.[key]);
+    result[label]=(result[label]||0)+1;
+  }
+  return result;
+}
+
+function riskBucket(value){
+  const n=Number(value||0);
+  if(n>=70)return 'Alto';
+  if(n>=40)return 'Moderado';
+  return 'Baixo';
+}
 async function boot(){try{const s=await api('/auth/status');if(s.setup_required){setupMode=true;showAuth(true)}else if(!s.authenticated){setupMode=false;showAuth(false)}else{currentAdmin=s.username||'admin';showApp();await loadAll()}}catch(e){showAuth(false);$('authError').textContent=tr('Backend indisponível:')+' '+e.message}}
 function showAuth(setup){$('app').classList.add('hidden');$('authShell').classList.remove('hidden');setupMode=setup;$('confirmField').classList.toggle('hidden',!setup);$('authTitle').textContent=setup?tr('Primeiro acesso'):'BSC DLP';$('authSubtitle').textContent=setup?tr('Crie a conta de administrador.'):tr('Entre com sua conta de administrador.');$('authButton').textContent=setup?tr('Criar administrador'):tr('Entrar');$('authPass').autocomplete=setup?'new-password':'current-password'}
 function showApp(){$('authShell').classList.add('hidden');$('app').classList.remove('hidden');$('adminName').textContent=currentAdmin;$('settingsAdmin').textContent=currentAdmin;navigate(location.hash.slice(1)||'overview')}
@@ -300,18 +888,408 @@ function qsFrom(prefix,{page=1,incidents=false}={}){const m=prefix==='evt'?{q:'e
 function reportQS(){const ids={q:'repSearch',endpoint:'repEndpoint',classification:'repClass',channel:'repChannel',severity:'repSeverity',action:'repAction',blocked:'repBlocked',start:'repStart',end:'repEnd',risk_min:'repRisk'};const p=new URLSearchParams();Object.entries(ids).forEach(([k,id])=>{let v=qv(id);if(v!==''&&(k==='start'||k==='end'))v=dateISO(v,k==='end');if(v!=='')p.set(k,v)});p.set('lang',currentLang);return p}
 function pagerHTML(page,pages,total,fn){const label=currentLang==='en'?`${total} record${total===1?'':'s'} · page ${page}/${pages}`:currentLang==='es'?`${total} registro${total===1?'':'s'} · página ${page}/${pages}`:`${total} registro${total===1?'':'s'} · página ${page}/${pages}`;return `<span>${label}</span><button class="btn" ${page<=1?'disabled':''} onclick="${fn}(${page-1})">←</button><button class="btn" ${page>=pages?'disabled':''} onclick="${fn}(${page+1})">→</button>`}
 async function loadStats(){const s=await api('/stats');$('riskScore').textContent=s.risk_score;$('riskRingValue').textContent=s.risk_score;$('riskRing').style.setProperty('--risk',`${s.risk_score}%`);$('incidentCount').textContent=s.incidents;$('endpointCount').textContent=s.endpoints;$('endpointHealth').textContent=currentLang==='es'?`${s.endpoints}/${s.endpoints_total} endpoints en línea`:`${s.endpoints}/${s.endpoints_total} endpoints online`;$('blockedCount').textContent=s.blocked;const r=s.risk_score;$('riskLabel').textContent=tr(r>=70?'Prioridade alta':r>=40?'Requer atenção':'Sem risco elevado recente');$('riskState').textContent=tr(r>=70?'Alto':r>=40?'Moderado':'Baixo')}
+async function loadOverviewCharts(){
+  ensureChartGrid('overview','overview-main',[
+    {
+      id:'overviewChartChannels',
+      title:'Eventos por canal',
+      subtitle:'Distribuição dos últimos 100 eventos'
+    },
+    {
+      id:'overviewChartActions',
+      title:'Ações DLP',
+      subtitle:'ALLOW, AUDIT, ALERT, BLOCK e QUARANTINE'
+    },
+    {
+      id:'overviewChartRisk',
+      title:'Risco recente',
+      subtitle:'Score dos eventos mais recentes'
+    }
+  ],'.grid4');
+
+  const d=await api('/events/query?page=1&page_size=100');
+  const rows=Array.isArray(d.items)?d.items:[];
+
+  renderBarChart(
+    'overviewChartChannels',
+    countBy(rows,'channel',v=>String(v||'unknown')),
+    {limit:8}
+  );
+
+  renderDonutChart(
+    'overviewChartActions',
+    countBy(rows,'action',v=>String(v||'AUDIT').toUpperCase()),
+    {centerLabel:'Eventos'}
+  );
+
+  const riskRows=rows
+    .slice(0,15)
+    .reverse()
+    .map(e=>({
+      label:when(e.timestamp),
+      value:Number(e.risk_score||0)
+    }));
+
+  renderLineChart(
+    'overviewChartRisk',
+    riskRows,
+    {note:'Escala de risco de 0 a 100'}
+  );
+}
 async function loadOverviewEvents(){const events=await api('/events?limit=8');$('overviewEvents').innerHTML=events.map(e=>`<tr><td>${esc(when(e.timestamp))}</td><td>${riskBadge(e.risk_score)}</td><td>${esc(e.hostname||e.endpoint_id)}</td><td>${esc(e.classification)}</td><td>${esc(e.channel)}</td><td>${actionBadge(e.action)}</td><td class="code">${esc(baseName(e.object_path))}</td></tr>`).join('')||`<tr><td colspan="7">${tr('Aguardando telemetria DLP.')}</td></tr>`}
-async function loadEvents(page=eventPage){eventPage=page;const d=await api('/events/query?'+qsFrom('evt',{page}).toString());eventPage=d.page;$('eventTable').innerHTML=d.items.length?d.items.map(e=>`<tr><td>${esc(when(e.timestamp))}</td><td>${riskBadge(e.risk_score)}</td><td>${esc(e.hostname||e.endpoint_id)}</td><td>${esc((e.document_type||'-').toUpperCase())}</td><td>${esc(e.classification)}</td><td>${esc(e.channel)}</td><td>${actionBadge(e.action)}</td><td>${e.blocked?`<span class="badge block">${tr('SIM')}</span>`:`<span class="badge offline">${tr('NÃO')}</span>`}</td></tr>`).join(''):`<tr><td colspan="8">${tr('Nenhum evento com estes filtros.')}</td></tr>`;$('eventPager').innerHTML=pagerHTML(d.page,d.pages,d.total,'loadEvents');$('eventCountLabel').textContent=currentLang==='en'?`${d.total} event${d.total===1?'':'s'}`:currentLang==='es'?`${d.total} evento${d.total===1?'':'s'}`:`${d.total} evento${d.total===1?'':'s'}`}
+function renderEventCharts(rows){
+  ensureChartGrid('events','events-main',[
+    {
+      id:'eventChartClasses',
+      title:'Top classificações',
+      subtitle:'Ocorrências nos eventos exibidos'
+    },
+    {
+      id:'eventChartChannels',
+      title:'Canais DLP',
+      subtitle:'Distribuição dos eventos exibidos'
+    },
+    {
+      id:'eventChartRisk',
+      title:'Risco recente',
+      subtitle:'Score dos eventos mais recentes'
+    }
+  ],'.filters');
+
+  renderBarChart(
+    'eventChartClasses',
+    countBy(rows,'classification',v=>String(v||'UNKNOWN')),
+    {limit:8}
+  );
+
+  renderDonutChart(
+    'eventChartChannels',
+    countBy(rows,'channel',v=>String(v||'unknown')),
+    {centerLabel:'Eventos'}
+  );
+
+  const riskRows=(rows||[])
+    .slice(0,15)
+    .reverse()
+    .map(e=>({
+      label:when(e.timestamp),
+      value:Number(e.risk_score||0)
+    }));
+
+  renderLineChart(
+    'eventChartRisk',
+    riskRows,
+    {note:'Eventos da página e filtros atuais'}
+  );
+}
+
+function renderIncidentCharts(rows){
+  ensureChartGrid('incidents','incidents-main',[
+    {
+      id:'incidentChartTypes',
+      title:'Tipos de incidente',
+      subtitle:'Principais correlações observadas'
+    },
+    {
+      id:'incidentChartRiskBuckets',
+      title:'Distribuição de risco',
+      subtitle:'Baixo, moderado e alto'
+    },
+    {
+      id:'incidentChartRisk',
+      title:'Risco dos incidentes',
+      subtitle:'Score máximo dos incidentes recentes'
+    }
+  ],'.filters');
+
+  const types={};
+  const buckets={
+    Baixo:0,
+    Moderado:0,
+    Alto:0
+  };
+
+  for(const row of rows||[]){
+    const type=String(
+      row.incident_type||'Atividade sensível'
+    );
+
+    types[type]=(types[type]||0)+1;
+
+    const bucket=riskBucket(row.max_risk);
+    buckets[bucket]=(buckets[bucket]||0)+1;
+  }
+
+  renderBarChart(
+    'incidentChartTypes',
+    types,
+    {limit:8}
+  );
+
+  renderDonutChart(
+    'incidentChartRiskBuckets',
+    buckets,
+    {centerLabel:'Incidentes'}
+  );
+
+  const riskRows=(rows||[])
+    .slice(0,15)
+    .reverse()
+    .map(e=>({
+      label:when(e.last_seen),
+      value:Number(e.max_risk||0)
+    }));
+
+  renderLineChart(
+    'incidentChartRisk',
+    riskRows,
+    {note:'Incidentes da página e filtros atuais'}
+  );
+}
+async function loadEvents(page=eventPage){eventPage=page;const d=await api('/events/query?'+qsFrom('evt',{page}).toString());eventPage=d.page;renderEventCharts(d.items||[]);$('eventTable').innerHTML=d.items.length?d.items.map(e=>`<tr><td>${esc(when(e.timestamp))}</td><td>${riskBadge(e.risk_score)}</td><td>${esc(e.hostname||e.endpoint_id)}</td><td>${esc((e.document_type||'-').toUpperCase())}</td><td>${esc(e.classification)}</td><td>${esc(e.channel)}</td><td>${actionBadge(e.action)}</td><td>${e.blocked?`<span class="badge block">${tr('SIM')}</span>`:`<span class="badge offline">${tr('NÃO')}</span>`}</td></tr>`).join(''):`<tr><td colspan="8">${tr('Nenhum evento com estes filtros.')}</td></tr>`;$('eventPager').innerHTML=pagerHTML(d.page,d.pages,d.total,'loadEvents');$('eventCountLabel').textContent=currentLang==='en'?`${d.total} event${d.total===1?'':'s'}`:currentLang==='es'?`${d.total} evento${d.total===1?'':'s'}`:`${d.total} evento${d.total===1?'':'s'}`}
 function applyEventFilters(){eventPage=1;loadEvents(1).catch(e=>toast(e.message))}function clearEventFilters(){['evtSearch','evtEndpoint','evtClass','evtChannel','evtSeverity','evtAction','evtBlocked','evtStart','evtEnd'].forEach(id=>setv(id));setv('evtRisk','0');setv('evtPageSize','25');applyEventFilters()}
-async function loadIncidents(page=incidentPage){incidentPage=page;const d=await api('/incidents/correlated?'+qsFrom('inc',{page,incidents:true}).toString());incidentPage=d.page;$('incidentList').innerHTML=d.items.length?d.items.map(e=>`<div class="incident"><div class="risk-number">${Number(e.max_risk||0)}</div><div><strong>${esc(e.incident_type||tr('Atividade com dados sensíveis'))}</strong><small>${esc(e.hostname||e.endpoint_id)} · ${(e.classifications||[]).map(esc).join(', ')} · ${esc(e.channel)} · ${Number(e.event_count||0)} evento(s) · ${Number(e.object_count||0)} objeto(s)</small><small>${(e.risk_reasons||[]).map(esc).join(' · ')}</small></div><div class="incident-meta">${e.blocked?`<span class="badge block">${tr('BLOQUEADO')}</span>`:`<span class="badge alert">ALERT</span>`}<small>${esc(when(e.last_seen))}</small></div></div>`).join(''):`<div class="empty">${tr('Nenhum incidente com estes filtros.')}</div>`;$('incidentPager').innerHTML=pagerHTML(d.page,d.pages,d.total,'loadIncidents');$('incidentCountLabel').textContent=currentLang==='en'?`${d.total} incident${d.total===1?'':'s'}`:currentLang==='es'?`${d.total} incidente${d.total===1?'':'s'}`:`${d.total} incidente${d.total===1?'':'s'}`}
+async function loadIncidents(page=incidentPage){incidentPage=page;const d=await api('/incidents/correlated?'+qsFrom('inc',{page,incidents:true}).toString());incidentPage=d.page;renderIncidentCharts(d.items||[]);$('incidentList').innerHTML=d.items.length?d.items.map(e=>`<div class="incident"><div class="risk-number">${Number(e.max_risk||0)}</div><div><strong>${esc(e.incident_type||tr('Atividade com dados sensíveis'))}</strong><small>${esc(e.hostname||e.endpoint_id)} · ${(e.classifications||[]).map(esc).join(', ')} · ${esc(e.channel)} · ${Number(e.event_count||0)} evento(s) · ${Number(e.object_count||0)} objeto(s)</small><small>${(e.risk_reasons||[]).map(esc).join(' · ')}</small></div><div class="incident-meta">${e.blocked?`<span class="badge block">${tr('BLOQUEADO')}</span>`:`<span class="badge alert">ALERT</span>`}<small>${esc(when(e.last_seen))}</small></div></div>`).join(''):`<div class="empty">${tr('Nenhum incidente com estes filtros.')}</div>`;$('incidentPager').innerHTML=pagerHTML(d.page,d.pages,d.total,'loadIncidents');$('incidentCountLabel').textContent=currentLang==='en'?`${d.total} incident${d.total===1?'':'s'}`:currentLang==='es'?`${d.total} incidente${d.total===1?'':'s'}`:`${d.total} incidente${d.total===1?'':'s'}`}
 function applyIncidentFilters(){incidentPage=1;loadIncidents(1).catch(e=>toast(e.message))}function clearIncidentFilters(){['incSearch','incEndpoint','incClass','incChannel','incSeverity','incAction','incBlocked','incStart','incEnd'].forEach(id=>setv(id));setv('incRisk','40');setv('incPageSize','25');applyIncidentFilters()}
-async function loadEndpoints(){const rows=await api('/endpoints');$('endpointList').innerHTML=rows.length?rows.map(e=>`<div class="endpoint"><div class="endpoint-icon">${String(e.os||'').toLowerCase().includes('windows')?'⊞':'⌘'}</div><div><strong>${esc(e.hostname||e.endpoint_id)}</strong><small>${esc(e.username||'')} · ${esc(e.os||'-')} · ${tr('Agente')} ${esc(e.agent_version||'-')} · ${esc(when(e.last_seen))}</small></div><div class="endpoint-actions">${riskBadge(e.risk_score)}<span class="badge ${e.active?'online':'offline'}">${tr(e.active?'ONLINE':'OFFLINE')}</span><button class="btn danger" onclick="revokeEndpoint('${encodeURIComponent(e.endpoint_id)}')">${tr('Revogar')}</button></div></div>`).join(''):`<div class="empty">${tr('Nenhum endpoint registrado. Use “Adicionar endpoint” para registrar um dispositivo.')}</div>`}
+function renderEndpointCharts(rows){
+  ensureChartGrid('endpoints','endpoints-main',[
+    {
+      id:'endpointChartStatus',
+      title:'Status dos endpoints',
+      subtitle:'Online e offline'
+    },
+    {
+      id:'endpointChartRisk',
+      title:'Risco por endpoint',
+      subtitle:'Endpoints com maior score'
+    },
+    {
+      id:'endpointChartOS',
+      title:'Sistemas operacionais',
+      subtitle:'Distribuição dos agentes registrados'
+    }
+  ],'.hero');
+
+  const status={Online:0,Offline:0};
+  const os={};
+
+  for(const row of rows||[]){
+    if(row.active)status.Online++;
+    else status.Offline++;
+
+    const name=String(row.os||'Desconhecido');
+    os[name]=(os[name]||0)+1;
+  }
+
+  renderDonutChart(
+    'endpointChartStatus',
+    status,
+    {centerLabel:'Endpoints'}
+  );
+
+  renderBarChart(
+    'endpointChartRisk',
+    (rows||[]).map(row=>({
+      label:String(row.hostname||row.endpoint_id||'-'),
+      value:Number(row.risk_score||0)
+    })),
+    {limit:8}
+  );
+
+  renderBarChart(
+    'endpointChartOS',
+    os,
+    {limit:8}
+  );
+}
+
+function renderPolicyCharts(rows){
+  ensureChartGrid('policies','policies-main',[
+    {
+      id:'policyChartActions',
+      title:'Ações das políticas',
+      subtitle:'Distribuição por tipo de enforcement'
+    },
+    {
+      id:'policyChartChannels',
+      title:'Políticas por canal',
+      subtitle:'Cobertura dos canais DLP'
+    },
+    {
+      id:'policyChartSeverity',
+      title:'Severidade das políticas',
+      subtitle:'LOW, MEDIUM, HIGH e CRITICAL'
+    }
+  ],'.hero');
+
+  renderDonutChart(
+    'policyChartActions',
+    countBy(rows,'action',v=>String(v||'AUDIT').toUpperCase()),
+    {centerLabel:'Políticas'}
+  );
+
+  renderBarChart(
+    'policyChartChannels',
+    countBy(rows,'channel',v=>String(v||'filesystem')),
+    {limit:10}
+  );
+
+  renderDonutChart(
+    'policyChartSeverity',
+    countBy(rows,'severity',v=>String(v||'MEDIUM').toUpperCase()),
+    {centerLabel:'Políticas'}
+  );
+}
+async function loadEndpoints(){const rows=await api('/endpoints');renderEndpointCharts(rows);$('endpointList').innerHTML=rows.length?rows.map(e=>`<div class="endpoint"><div class="endpoint-icon">${String(e.os||'').toLowerCase().includes('windows')?'⊞':'⌘'}</div><div><strong>${esc(e.hostname||e.endpoint_id)}</strong><small>${esc(e.username||'')} · ${esc(e.os||'-')} · ${tr('Agente')} ${esc(e.agent_version||'-')} · ${esc(when(e.last_seen))}</small></div><div class="endpoint-actions">${riskBadge(e.risk_score)}<span class="badge ${e.active?'online':'offline'}">${tr(e.active?'ONLINE':'OFFLINE')}</span><button class="btn danger" onclick="revokeEndpoint('${encodeURIComponent(e.endpoint_id)}')">${tr('Revogar')}</button></div></div>`).join(''):`<div class="empty">${tr('Nenhum endpoint registrado. Use “Adicionar endpoint” para registrar um dispositivo.')}</div>`}
 async function revokeEndpoint(encoded){if(!confirm(tr('Revogar a credencial deste endpoint?')))return;await api(`/endpoints/${encoded}/revoke`,{method:'POST'});toast(tr('Endpoint revogado'));await loadEndpoints()}
-async function loadPolicies(){const rows=await api('/policies');$('policyTable').innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.name)}</strong></td><td>${esc(p.classification)}</td><td>${esc(p.channel)}</td><td>${severityBadge(p.severity)}</td><td><select onchange="updatePolicy(${p.id},'action',this.value)" style="background:#0b050b;color:#fff;border:1px solid #382237;border-radius:7px;padding:5px"><option ${p.action==='AUDIT'?'selected':''}>AUDIT</option><option ${p.action==='ALERT'?'selected':''}>ALERT</option><option ${p.action==='BLOCK'?'selected':''}>BLOCK</option><option ${p.action==='QUARANTINE'?'selected':''}>QUARANTINE</option><option ${p.action==='ALLOW'?'selected':''}>ALLOW</option></select></td><td><button class="btn" onclick="updatePolicy(${p.id},'enabled',${!p.enabled})">${tr(p.enabled?'Ativo':'Desativado')}</button></td></tr>`).join('')}
+async function loadPolicies(){const rows=await api('/policies');renderPolicyCharts(rows);$('policyTable').innerHTML=rows.map(p=>`<tr><td><strong>${esc(p.name)}</strong></td><td>${esc(p.classification)}</td><td>${esc(p.channel)}</td><td>${severityBadge(p.severity)}</td><td><select onchange="updatePolicy(${p.id},'action',this.value)" style="background:#0b050b;color:#fff;border:1px solid #382237;border-radius:7px;padding:5px"><option ${p.action==='AUDIT'?'selected':''}>AUDIT</option><option ${p.action==='ALERT'?'selected':''}>ALERT</option><option ${p.action==='BLOCK'?'selected':''}>BLOCK</option><option ${p.action==='QUARANTINE'?'selected':''}>QUARANTINE</option><option ${p.action==='ALLOW'?'selected':''}>ALLOW</option></select></td><td><button class="btn" onclick="updatePolicy(${p.id},'enabled',${!p.enabled})">${tr(p.enabled?'Ativo':'Desativado')}</button></td></tr>`).join('')}
 async function updatePolicy(id,key,value){await api(`/policies/${id}`,{method:'PATCH',body:JSON.stringify({[key]:value})});toast(tr('Política atualizada'));await loadPolicies()}
 function fillClassifierSelects(){for(const id of ['evtClass','incClass','repClass']){const el=$(id);if(!el)continue;const selected=el.value;el.innerHTML=`<option value="">${tr('Todas classificações')}</option>`+knownClassifiers.map(c=>`<option>${esc(c)}</option>`).join('');el.value=selected}const pol=$('policyClass');if(pol){const selected=pol.value;pol.innerHTML=knownClassifiers.map(c=>`<option>${esc(c)}</option>`).join('');if(knownClassifiers.includes(selected))pol.value=selected}}
-async function loadCapabilities(){const c=await api('/capabilities');const docs=c.documents||[];$('documentGrid').innerHTML=docs.map(d=>`<div class="tile"><h3>${esc(d)}</h3><p>${tr(d==='PDF'?'PDF textual e digitalizado com OCR.':d==='DOCX'||d==='XLSX'||d==='PPTX'?'Conteúdo de documentos Office.':'Conteúdo textual e estruturado.')}</p><div class="tile-meta"><span>${tr('Inspeção local')}</span><span class="badge online">${tr('ATIVO')}</span></div></div>`).join('');knownClassifiers=c.classifiers||[];fillClassifierSelects();$('builtinDetectors').innerHTML=knownClassifiers.map(c=>`<div class="tile"><h3>${esc(c)}</h3><p>${tr('Detector nativo do BSC DLP.')}</p><div class="tile-meta"><span class="badge native-badge">${tr('NATIVO')}</span><span>${tr('Local')}</span></div></div>`).join('')}
+function renderDetectorCharts(rows){
+  ensureChartGrid('detectors','detectors-main',[
+    {
+      id:'detectorChartSources',
+      title:'Origem dos detectores',
+      subtitle:'Nativos e regras customizadas'
+    },
+    {
+      id:'detectorChartStatus',
+      title:'Status das regras custom',
+      subtitle:'Ativas e desativadas'
+    },
+    {
+      id:'detectorChartClasses',
+      title:'Classificações customizadas',
+      subtitle:'Distribuição das regras criadas'
+    }
+  ],'.hero');
+
+  const nativeCount=
+    document.querySelectorAll('#builtinDetectors .tile').length;
+
+  const customCount=(rows||[]).length;
+
+  renderDonutChart(
+    'detectorChartSources',
+    {
+      Nativos:nativeCount,
+      Customizados:customCount
+    },
+    {centerLabel:'Detectores'}
+  );
+
+  let active=0;
+  let inactive=0;
+
+  for(const row of rows||[]){
+    if(row.enabled)active++;
+    else inactive++;
+  }
+
+  renderDonutChart(
+    'detectorChartStatus',
+    {
+      Ativos:active,
+      Desativados:inactive
+    },
+    {centerLabel:'Regras'}
+  );
+
+  renderBarChart(
+    'detectorChartClasses',
+    countBy(
+      rows,
+      'classification',
+      v=>String(v||'UNKNOWN')
+    ),
+    {limit:10}
+  );
+}
+
+async function renderDocumentCharts(docs){
+  ensureChartGrid('documents','documents-main',[
+    {
+      id:'documentChartTypes',
+      title:'Tipos de documento observados',
+      subtitle:'Formatos realmente vistos pela telemetria'
+    },
+    {
+      id:'documentChartChannels',
+      title:'Canais dos documentos',
+      subtitle:'Onde os documentos sensíveis apareceram'
+    },
+    {
+      id:'documentChartRisk',
+      title:'Risco dos documentos',
+      subtitle:'Score dos eventos documentais recentes'
+    }
+  ],'.hero');
+
+  const d=await api('/events/query?page=1&page_size=100');
+  const all=Array.isArray(d.items)?d.items:[];
+
+  const supported=new Set(
+    (docs||[]).map(v=>String(v||'').toUpperCase())
+  );
+
+  const rows=all.filter(e=>{
+    const type=String(e.document_type||'').toUpperCase();
+    return type && supported.has(type);
+  });
+
+  renderBarChart(
+    'documentChartTypes',
+    countBy(
+      rows,
+      'document_type',
+      v=>String(v||'UNKNOWN').toUpperCase()
+    ),
+    {limit:10}
+  );
+
+  renderDonutChart(
+    'documentChartChannels',
+    countBy(
+      rows,
+      'channel',
+      v=>String(v||'unknown')
+    ),
+    {centerLabel:'Eventos'}
+  );
+
+  const riskRows=rows
+    .slice(0,15)
+    .reverse()
+    .map(e=>({
+      label:when(e.timestamp),
+      value:Number(e.risk_score||0)
+    }));
+
+  renderLineChart(
+    'documentChartRisk',
+    riskRows,
+    {note:'Somente formatos documentais suportados pelo BSC DLP'}
+  );
+}
+async function loadCapabilities(){const c=await api('/capabilities');const docs=c.documents||[];await renderDocumentCharts(docs);$('documentGrid').innerHTML=docs.map(d=>`<div class="tile"><h3>${esc(d)}</h3><p>${tr(d==='PDF'?'PDF textual e digitalizado com OCR.':d==='DOCX'||d==='XLSX'||d==='PPTX'?'Conteúdo de documentos Office.':'Conteúdo textual e estruturado.')}</p><div class="tile-meta"><span>${tr('Inspeção local')}</span><span class="badge online">${tr('ATIVO')}</span></div></div>`).join('');knownClassifiers=c.classifiers||[];fillClassifierSelects();$('builtinDetectors').innerHTML=knownClassifiers.map(c=>`<div class="tile"><h3>${esc(c)}</h3><p>${tr('Detector nativo do BSC DLP.')}</p><div class="tile-meta"><span class="badge native-badge">${tr('NATIVO')}</span><span>${tr('Local')}</span></div></div>`).join('')}
 async function loadAIGateway(){
+  ensureChartGrid('ai_gateway','ai-main',[
+    {
+      id:'aiChartProviders',
+      title:'Prompts por provider',
+      subtitle:'ChatGPT, Claude, Gemini e Copilot'
+    },
+    {
+      id:'aiChartActions',
+      title:'Decisões DLP',
+      subtitle:'ALLOW, ALERT e BLOCK'
+    },
+    {
+      id:'aiChartRisk',
+      title:'Risco de prompts',
+      subtitle:'Score dos prompts mais recentes'
+    }
+  ],'.grid4');
+
   const [all,blocked,alerts]=await Promise.all([
     api('/events/query?channel=ai_prompt&page=1&page_size=100'),
     api('/events/query?channel=ai_prompt&blocked=true&page=1&page_size=10'),
@@ -344,6 +1322,36 @@ async function loadAIGateway(){
     }
   }
 
+  renderBarChart(
+    'aiChartProviders',
+    {
+      ChatGPT:stats.chatgpt.total,
+      Claude:stats.claude.total,
+      Gemini:stats.gemini.total,
+      Copilot:stats.copilot.total
+    },
+    {limit:4}
+  );
+
+  renderDonutChart(
+    'aiChartActions',
+    countBy(items,'action',v=>String(v||'ALLOW').toUpperCase()),
+    {centerLabel:'Prompts'}
+  );
+
+  const aiRiskRows=items
+    .slice(0,15)
+    .reverse()
+    .map(e=>({
+      label:when(e.timestamp),
+      value:Number(e.risk_score||0)
+    }));
+
+  renderLineChart(
+    'aiChartRisk',
+    aiRiskRows,
+    {note:'Risco calculado pelo BSC DLP'}
+  );
   $('aiProviderCount').textContent=
     providers.filter(p=>stats[p].total>0).length;
 
@@ -376,12 +1384,49 @@ async function loadAIGateway(){
     `).join('')
     : `<tr><td colspan="6">${tr('Nenhum prompt de IA inspecionado.')}</td></tr>`;
 }
-async function loadDetectors(){const rows=await api('/detection-rules');for(const r of rows){if(!knownClassifiers.includes(r.classification))knownClassifiers.push(r.classification)}knownClassifiers.sort();fillClassifierSelects();$('detectorTable').innerHTML=rows.length?rows.map(r=>`<tr><td><strong>${esc(r.name)}</strong><br><small style="color:#806778">${esc(r.description||'')}</small></td><td>${esc(r.classification)}</td><td class="code pattern-cell" title="${esc(r.pattern)}">${esc(r.pattern)}</td><td><button class="btn" onclick="toggleDetector(${r.id},${!r.enabled})">${tr(r.enabled?'Ativo':'Desativado')}</button></td><td><button class="btn danger" onclick="deleteDetector(${r.id})">${tr('Excluir')}</button></td></tr>`).join(''):`<tr><td colspan="5">${tr('Nenhuma regra customizada. Os detectores nativos continuam ativos.')}</td></tr>`}
+async function loadDetectors(){const rows=await api('/detection-rules');renderDetectorCharts(rows);for(const r of rows){if(!knownClassifiers.includes(r.classification))knownClassifiers.push(r.classification)}knownClassifiers.sort();fillClassifierSelects();$('detectorTable').innerHTML=rows.length?rows.map(r=>`<tr><td><strong>${esc(r.name)}</strong><br><small style="color:#806778">${esc(r.description||'')}</small></td><td>${esc(r.classification)}</td><td class="code pattern-cell" title="${esc(r.pattern)}">${esc(r.pattern)}</td><td><button class="btn" onclick="toggleDetector(${r.id},${!r.enabled})">${tr(r.enabled?'Ativo':'Desativado')}</button></td><td><button class="btn danger" onclick="deleteDetector(${r.id})">${tr('Excluir')}</button></td></tr>`).join(''):`<tr><td colspan="5">${tr('Nenhuma regra customizada. Os detectores nativos continuam ativos.')}</td></tr>`}
 function openDetectorModal(){$('detectorModal').classList.add('open')}async function createDetector(){try{await api('/detection-rules',{method:'POST',body:JSON.stringify({name:qv('detectorName'),classification:qv('detectorClass'),pattern:qv('detectorPattern'),description:qv('detectorDescription'),enabled:qv('detectorEnabled')!=='false'})});closeModal('detectorModal');['detectorName','detectorClass','detectorPattern','detectorDescription'].forEach(id=>setv(id));toast(tr('Detector criado e será distribuído aos agentes'));await loadDetectors();await loadCapabilities()}catch(e){toast(e.message)}}async function toggleDetector(id,enabled){await api(`/detection-rules/${id}`,{method:'PATCH',body:JSON.stringify({enabled})});await loadDetectors()}async function deleteDetector(id){if(!confirm(tr('Excluir esta regra customizada?')))return;await api(`/detection-rules/${id}`,{method:'DELETE'});toast(tr('Detector excluído'));await loadDetectors()}
-async function loadReport(){const d=await api('/reports/summary?'+reportQS().toString());const m=d.metrics;$('repEvents').textContent=m.events;$('repIncidents').textContent=m.incidents;$('repBlockedCount').textContent=m.blocked;$('repRiskMax').textContent=m.max_risk;$('reportClasses').innerHTML=Object.entries(m.by_classification||{}).slice(0,10).map(([k,v])=>`<div class="mini-row"><strong>${esc(k)}</strong><span>${v}</span></div>`).join('')||`<div class="empty">${tr('Sem dados no período.')}</div>`;$('reportChannels').innerHTML=Object.entries(m.by_channel||{}).map(([k,v])=>`<div class="mini-row"><strong>${esc(k)}</strong><span>${v}</span></div>`).join('')||`<div class="empty">${tr('Sem dados no período.')}</div>`}
+function renderReportCharts(metrics){
+  ensureChartGrid('reports','reports-main',[
+    {
+      id:'reportChartClasses',
+      title:'Top classificações',
+      subtitle:'Dados sensíveis mais observados no período'
+    },
+    {
+      id:'reportChartChannels',
+      title:'Distribuição por canal',
+      subtitle:'Origem dos eventos DLP'
+    },
+    {
+      id:'reportChartActions',
+      title:'Ações de proteção',
+      subtitle:'ALLOW, AUDIT, ALERT, BLOCK e QUARANTINE'
+    }
+  ],'.report-grid');
+
+  renderBarChart(
+    'reportChartClasses',
+    metrics?.by_classification||{},
+    {limit:10}
+  );
+
+  renderDonutChart(
+    'reportChartChannels',
+    metrics?.by_channel||{},
+    {centerLabel:'Eventos'}
+  );
+
+  renderDonutChart(
+    'reportChartActions',
+    metrics?.by_action||{},
+    {centerLabel:'Ações'}
+  );
+}
+async function loadReport(){const d=await api('/reports/summary?'+reportQS().toString());const m=d.metrics;renderReportCharts(m);$('repEvents').textContent=m.events;$('repIncidents').textContent=m.incidents;$('repBlockedCount').textContent=m.blocked;$('repRiskMax').textContent=m.max_risk;$('reportClasses').innerHTML=Object.entries(m.by_classification||{}).slice(0,10).map(([k,v])=>`<div class="mini-row"><strong>${esc(k)}</strong><span>${v}</span></div>`).join('')||`<div class="empty">${tr('Sem dados no período.')}</div>`;$('reportChannels').innerHTML=Object.entries(m.by_channel||{}).map(([k,v])=>`<div class="mini-row"><strong>${esc(k)}</strong><span>${v}</span></div>`).join('')||`<div class="empty">${tr('Sem dados no período.')}</div>`}
 async function downloadReportPDF(){try{toast(tr('Gerando relatório PDF...'));const url=API+'/reports/export.pdf?'+reportQS().toString();const r=await fetch(url,{credentials:'same-origin'});if(r.status===401){showAuth(false);throw new Error(tr('Sessão expirada'))}if(!r.ok){let msg=`HTTP ${r.status}`;try{const d=await r.json();msg=d.detail||msg}catch{}throw new Error(msg)}const blob=await r.blob();if(!blob.size)throw new Error(tr('O PDF foi gerado vazio'));const cd=r.headers.get('Content-Disposition')||'';const m=cd.match(/filename="?([^";]+)"?/i);const name=m?.[1]||'bsc-dlp-report.pdf';const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);toast(tr('Relatório PDF gerado'))}catch(e){toast(tr('Falha ao gerar PDF:')+' '+e.message)}}
 function downloadReportCSV(){window.location.href=API+'/reports/export.csv?'+reportQS().toString()}function printReport(){window.open(API+'/reports/print?'+reportQS().toString(),'_blank','noopener')}
-async function loadAll(){try{await loadCapabilities();await Promise.all([loadStats(),loadOverviewEvents(),loadEvents(),loadIncidents(),loadEndpoints(),loadPolicies(),loadDetectors()])}catch(e){toast(e.message)}}
+async function loadAll(){try{await loadCapabilities();await loadOverviewCharts();await Promise.all([loadStats(),loadOverviewEvents(),loadEvents(),loadIncidents(),loadEndpoints(),loadPolicies(),loadDetectors()])}catch(e){toast(e.message)}}
 function openEndpointModal(){$('endpointModal').classList.add('open');$('endpointGenerate').classList.remove('hidden');$('endpointResult').classList.add('hidden')}
 function openPolicyModal(){$('policyModal').classList.add('open')}
 function closeModal(id){$(id).classList.remove('open')}

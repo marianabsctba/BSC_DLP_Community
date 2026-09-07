@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.6.9] - 2026-09-07
+
+### Dashboard Analytics
+- Novo motor gráfico nativo e local, sem dependências externas.
+- 27 visualizações analíticas distribuídas em 9 módulos da console.
+- Visão Geral com eventos por canal, ações DLP e evolução de risco.
+- Incidentes com tipos correlacionados, distribuição e evolução de risco.
+- Eventos com classificações, canais e risco conforme filtros e paginação.
+- Endpoints com status, risco por dispositivo e sistemas operacionais.
+- Políticas com ações, canais e severidades.
+- AI Gateway com prompts por provider, decisões DLP e risco.
+- Detectores com origem, status e classificações.
+- Documentos & OCR com formatos observados, canais e risco documental.
+- Relatórios com classificações, canais e ações de proteção.
+- Layout responsivo integrado à console BSC DLP.
 ## [0.6.8] - 2026-09-07
 
 ### AI Gateway

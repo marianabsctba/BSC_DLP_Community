@@ -11,7 +11,7 @@
   <br><br>
 
   [![CI](https://github.com/marianabsctba/BSC_DLP_Community/actions/workflows/ci.yml/badge.svg)](https://github.com/marianabsctba/BSC_DLP_Community/actions/workflows/ci.yml)
-  ![Version](https://img.shields.io/badge/version-0.6.8-ff2d95?style=flat-square)
+  ![Version](https://img.shields.io/badge/version-0.6.9-ff2d95?style=flat-square)
   ![License](https://img.shields.io/badge/license-AGPL--3.0-ff2d95?style=flat-square)
   ![Agent](https://img.shields.io/badge/agent-Go-00ADD8?style=flat-square&logo=go&logoColor=white)
   ![Backend](https://img.shields.io/badge/backend-FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white)
@@ -852,7 +852,7 @@ The bridge test validates the local upload inspection path independently from br
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass `
   -File .\scripts\windows\Build-Community-Release.ps1 `
-  -Version 0.6.8
+  -Version 0.6.9
 ```
 
 GitHub workflows include:
