@@ -296,7 +296,7 @@ func browserDecision(
 	}
 
 	objectContext := buildObjectContext(objectName, channel, detections)
-	if channel == "browser_upload" {
+	if channel == "browser_upload" || channel == "ai_prompt" {
 		objectContext.DestinationTrust = "external"
 	}
 
@@ -374,13 +374,20 @@ func browserDecision(
 			evidence += "+context:" + strings.Join(objectContext.ContextTags, ",")
 		}
 		if blocked {
-			evidence += "+browser_pre_upload_block"
+			if channel == "ai_prompt" {
+				evidence += "+browser_pre_prompt_block"
+			} else {
+				evidence += "+browser_pre_upload_block"
+			}
 		}
 
 		objectPath := "browser://" + destination
-		if channel == "browser_upload" {
+		switch channel {
+		case "browser_upload":
 			objectPath += "/upload/" + filepath.Base(objectName)
-		} else {
+		case "ai_prompt":
+			objectPath += "/prompt"
+		default:
 			objectPath += "/composer"
 		}
 
@@ -588,6 +595,17 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 		}
 
 		detections := detectSensitiveWithRules(body.Text, customDetectionRules(api))
+
+		objectName := "browser-composer.txt"
+		inspection := "browser_outgoing_text"
+		docType := "browser_text"
+
+		if body.Channel == "ai_prompt" {
+			objectName = "ai-prompt.txt"
+			inspection = "browser_ai_prompt"
+			docType = "ai_prompt"
+		}
+
 		response := browserDecision(
 			api,
 			endpointID,
@@ -596,10 +614,10 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 			body.Destination,
 			body.Browser,
 			body.EventType,
-			"browser-composer.txt",
+			objectName,
 			fingerprint(body.Text),
-			"browser_outgoing_text",
-			"browser_text",
+			inspection,
+			docType,
 			body.Channel,
 			0,
 			detections,

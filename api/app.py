@@ -601,6 +601,7 @@ def risk_for_event(
         "browser_guard": 28,
         "email": 22,
         "ai": 26,
+        "ai_prompt": 26,
         "clipboard": 16,
         "filesystem": 3,
     }.get(channel, 6)
@@ -746,8 +747,8 @@ def risk_for_event(
         incident = "Sensitive download activity"
     elif channel == "email":
         incident = "Possible external email exfiltration"
-    elif channel == "ai":
-        incident = "Possible AI data exposure"
+    elif channel in {"ai", "ai_prompt"}:
+        incident = "Possible Generative AI data exposure"
     elif detections >= 10:
         incident = "Bulk sensitive-data activity"
     elif classes >= 2:

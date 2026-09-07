@@ -50,7 +50,7 @@
     </nav>
     <div class="nav-label">PROTEÇÃO</div>
     <nav class="nav">
-      <a href="#policies" data-view="policies"><span class="nav-icon">◆</span><span>Políticas</span></a>
+      <a href="#policies" data-view="policies"><span class="nav-icon">◆</span><span>Políticas</span></a>      <a href="#ai_gateway" data-view="ai_gateway"><span class="nav-icon">AI</span><span>AI Gateway</span></a>
       <a href="#detectors" data-view="detectors"><span class="nav-icon">⌁</span><span>Detectores</span></a>
       <a href="#documents" data-view="documents"><span class="nav-icon">▤</span><span>Documentos & OCR</span></a>
       
@@ -81,7 +81,7 @@
       <section class="view" id="incidents"><div class="hero"><div><h1>Incidentes</h1><p>Atividades com risco elevado, com filtro e paginação para investigação.</p></div></div>
         <div class="panel filters"><div class="filter-grid">
           <input id="incSearch" placeholder="Buscar arquivo, policy, evidência..."><input id="incEndpoint" placeholder="Endpoint / usuário">
-          <select id="incClass"><option value="">Todas classificações</option></select><select id="incChannel"><option value="">Todos canais</option><option>filesystem</option><option>download</option><option>screenshot</option><option>removable</option><option>messaging</option><option>browser_upload</option><option>browser_guard</option><option>browser_upload</option><option>browser_guard</option></select>
+          <select id="incClass"><option value="">Todas classificações</option></select><select id="incChannel"><option value="">Todos canais</option><option>filesystem</option><option>download</option><option>screenshot</option><option>removable</option><option>messaging</option><option>browser_upload</option><option>browser_guard</option><option>ai_prompt</option></select>
           <select id="incSeverity"><option value="">Todas severidades</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select><select id="incAction"><option value="">Todas ações</option><option>AUDIT</option><option>ALERT</option><option>BLOCK</option><option>QUARANTINE</option><option>ALLOW</option></select><select id="incBlocked"><option value="">Bloqueado: todos</option><option value="true">Somente bloqueados</option><option value="false">Não bloqueados</option></select>
           <input id="incStart" type="date"><input id="incEnd" type="date"><input id="incRisk" type="number" min="40" max="100" value="40" title="Risco mínimo">
           <select id="incPageSize"><option>10</option><option selected>25</option><option>50</option><option>100</option></select>
@@ -97,7 +97,7 @@
       <section class="view" id="events"><div class="hero"><div><h1>Eventos</h1><p>Telemetria DLP com filtros e limite por página.</p></div></div>
         <div class="panel filters"><div class="filter-grid">
           <input id="evtSearch" placeholder="Buscar arquivo, policy, evidência..."><input id="evtEndpoint" placeholder="Endpoint / usuário">
-          <select id="evtClass"><option value="">Todas classificações</option></select><select id="evtChannel"><option value="">Todos canais</option><option>filesystem</option><option>download</option><option>screenshot</option><option>removable</option><option>messaging</option><option>browser_upload</option><option>browser_guard</option><option>browser_upload</option><option>browser_guard</option></select>
+          <select id="evtClass"><option value="">Todas classificações</option></select><select id="evtChannel"><option value="">Todos canais</option><option>filesystem</option><option>download</option><option>screenshot</option><option>removable</option><option>messaging</option><option>browser_upload</option><option>browser_guard</option><option>ai_prompt</option></select>
           <select id="evtSeverity"><option value="">Todas severidades</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select><select id="evtAction"><option value="">Todas ações</option><option>AUDIT</option><option>ALERT</option><option>BLOCK</option><option>QUARANTINE</option><option>ALLOW</option></select>
           <select id="evtBlocked"><option value="">Bloqueado: todos</option><option value="true">Somente bloqueados</option><option value="false">Não bloqueados</option></select><input id="evtStart" type="date"><input id="evtEnd" type="date"><input id="evtRisk" type="number" min="0" max="100" value="0" title="Risco mínimo">
           <select id="evtPageSize"><option>10</option><option selected>25</option><option>50</option><option>100</option></select>
@@ -105,6 +105,99 @@
         <div class="panel"><div class="table-wrap"><table><thead><tr><th>Data</th><th>Risco</th><th>Endpoint</th><th>Documento</th><th>Classificação</th><th>Canal</th><th>Ação</th><th>Bloqueado</th></tr></thead><tbody id="eventTable"></tbody></table></div></div><div id="eventPager" class="pager"></div></section>
 
       
+      <section class="view" id="ai_gateway">
+        <div class="hero">
+          <div>
+            <h1>AI Gateway</h1>
+            <p>Inspeção local de prompts enviados para ferramentas de IA generativa, com DLP antes do envio.</p>
+          </div>
+          <div class="pill">LOCAL-FIRST · GENAI DLP</div>
+        </div>
+
+        <div class="grid4">
+          <div class="kpi">
+            <div class="kpi-top"><span>Prompts inspecionados</span><span>AI</span></div>
+            <div class="kpi-value pink" id="aiPromptTotal">0</div>
+            <div class="kpi-foot">Total registrado no canal ai_prompt</div>
+          </div>
+
+          <div class="kpi">
+            <div class="kpi-top"><span>Bloqueados</span><span>BLOCK</span></div>
+            <div class="kpi-value red" id="aiPromptBlocked">0</div>
+            <div class="kpi-foot">Bloqueio antes do envio ao provider</div>
+          </div>
+
+          <div class="kpi">
+            <div class="kpi-top"><span>Alertas</span><span>ALERT</span></div>
+            <div class="kpi-value yellow" id="aiPromptAlerts">0</div>
+            <div class="kpi-foot">Envio permitido com alerta DLP</div>
+          </div>
+
+          <div class="kpi">
+            <div class="kpi-top"><span>Providers recentes</span><span>GenAI</span></div>
+            <div class="kpi-value green" id="aiProviderCount">0</div>
+            <div class="kpi-foot">Observados nos últimos 100 eventos</div>
+          </div>
+        </div>
+
+        <div class="two">
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Atividade por provider</h2>
+              <span>Últimos 100 eventos</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Provider</th>
+                    <th>Prompts</th>
+                    <th>Bloqueados</th>
+                    <th>Alertas</th>
+                  </tr>
+                </thead>
+                <tbody id="aiProviderTable"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Privacidade do AI Gateway</h2>
+              <span>Local-first</span>
+            </div>
+            <div class="enforcement-note">
+              O conteúdo bruto do prompt não é armazenado por padrão.
+              O BSC DLP registra metadados, classificação, fingerprints,
+              decisão de política, risco e provider de destino.
+            </div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:14px">
+          <div class="panel-head">
+            <h2>Eventos recentes de AI Prompt</h2>
+            <span>Canal ai_prompt</span>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Provider</th>
+                  <th>Endpoint</th>
+                  <th>Classificação</th>
+                  <th>Ação</th>
+                  <th>Risco</th>
+                </tr>
+              </thead>
+              <tbody id="aiEventTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section class="view" id="detectors"><div class="hero"><div><h1>Detectores</h1><p>Classificações nativas e regras customizadas da organização.</p></div><button class="btn primary" onclick="openDetectorModal()">+ Novo detector</button></div>
         <div class="panel"><div class="panel-head"><h2>Detectores nativos</h2><span>Validação e contexto para reduzir falsos positivos</span></div><div id="builtinDetectors" class="doc-grid"></div></div>
         <div class="panel" style="margin-top:14px"><div class="panel-head"><h2>Regras customizadas</h2><span>Regex RE2 distribuída aos agentes</span></div><div class="table-wrap"><table><thead><tr><th>Nome</th><th>Classificação</th><th>Padrão</th><th>Status</th><th></th></tr></thead><tbody id="detectorTable"></tbody></table></div></div>
@@ -112,7 +205,7 @@
 
       <section class="view" id="reports"><div class="hero"><div><h1>Relatórios</h1><p>Resumo administrativo, exportação CSV e versão pronta para imprimir ou salvar em PDF.</p></div></div>
         <div class="panel filters"><div class="filter-grid">
-          <input id="repSearch" placeholder="Buscar arquivo, policy, evidência..."><input id="repEndpoint" placeholder="Endpoint / usuário"><select id="repClass"><option value="">Todas classificações</option></select><select id="repChannel"><option value="">Todos canais</option><option>filesystem</option><option>download</option><option>screenshot</option><option>removable</option><option>messaging</option><option>browser_upload</option><option>browser_guard</option><option>browser_upload</option><option>browser_guard</option></select>
+          <input id="repSearch" placeholder="Buscar arquivo, policy, evidência..."><input id="repEndpoint" placeholder="Endpoint / usuário"><select id="repClass"><option value="">Todas classificações</option></select><select id="repChannel"><option value="">Todos canais</option><option>filesystem</option><option>download</option><option>screenshot</option><option>removable</option><option>messaging</option><option>browser_upload</option><option>browser_guard</option><option>ai_prompt</option></select>
           <select id="repSeverity"><option value="">Todas severidades</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option></select><select id="repAction"><option value="">Todas ações</option><option>AUDIT</option><option>ALERT</option><option>BLOCK</option><option>QUARANTINE</option><option>ALLOW</option></select><select id="repBlocked"><option value="">Bloqueado: todos</option><option value="true">Somente bloqueados</option><option value="false">Não bloqueados</option></select><input id="repStart" type="date"><input id="repEnd" type="date"><input id="repRisk" type="number" min="0" max="100" value="0" title="Risco mínimo">
         </div><div class="toolbar"><button class="btn" onclick="loadReport().catch(e=>toast(e.message))">Atualizar resumo</button><button class="btn primary" onclick="downloadReportPDF()">Gerar relatório PDF</button><button class="btn" onclick="downloadReportCSV()">Exportar CSV</button><button class="btn" onclick="printReport()">Visualizar impressão</button></div></div>
         <div class="grid4 report-grid"><div class="kpi"><div class="kpi-top"><span>Eventos</span></div><div class="kpi-value" id="repEvents">0</div></div><div class="kpi"><div class="kpi-top"><span>Incidentes</span></div><div class="kpi-value" id="repIncidents">0</div></div><div class="kpi"><div class="kpi-top"><span>Bloqueios</span></div><div class="kpi-value" id="repBlockedCount">0</div></div><div class="kpi"><div class="kpi-top"><span>Risco máximo</span></div><div class="kpi-value" id="repRiskMax">0</div></div></div>
@@ -126,7 +219,7 @@
 
 <div id="endpointModal" class="modal-bg"><div class="modal"><div class="modal-head"><h3>Adicionar endpoint</h3><button class="modal-close" onclick="closeModal('endpointModal')">×</button></div><div class="modal-body"><div id="endpointGenerate"><div class="form-grid"><div class="field"><label>Identificação</label><input id="enrollLabel" value="Novo endpoint Windows"></div><div class="field"><label>Validade</label><select id="enrollTTL"><option value="30">30 minutos</option><option value="60">1 hora</option><option value="240">4 horas</option><option value="1440">24 horas</option></select></div></div><button class="btn primary" onclick="generateEnrollment()">Gerar código de instalação</button></div><div id="endpointResult" class="hidden"><div class="field"><label>Código de instalação</label><div id="enrollToken" class="token-box"></div></div><div class="field"><label>Instalação no endpoint</label><div id="enrollCommand" class="command-box"></div></div><button class="btn" onclick="copyEnrollment()">Copiar comando</button></div></div></div></div>
 
-<div id="policyModal" class="modal-bg"><div class="modal"><div class="modal-head"><h3>Nova política</h3><button class="modal-close" onclick="closeModal('policyModal')">×</button></div><div class="modal-body"><div class="form-grid"><div class="field fullcol"><label>Nome</label><input id="policyName" placeholder="Ex.: CNPJ - USB Block"></div><div class="field"><label>Classificação</label><select id="policyClass"><option>CPF</option><option>CNPJ</option><option>CREDIT_CARD</option><option>EMAIL_ADDRESS</option><option>RG_BR</option><option>PHONE_BR</option><option>PIX_KEY</option><option>BANK_ACCOUNT</option><option>PASSPORT</option><option>CREDENTIAL</option><option>SECRET</option><option>BROWSER_GUARD_DISABLED_OR_MISSING</option><option>BROWSER_GUARD_RESTORED</option><option>BROWSER_GUARD_DISABLED_OR_MISSING</option><option>BROWSER_GUARD_RESTORED</option></select></div><div class="field"><label>Canal</label><select id="policyChannel"><option value="filesystem">Filesystem</option><option value="download">Download</option><option value="screenshot">Screenshot</option><option value="removable">USB / Removable</option><option value="messaging">Messaging / WhatsApp Desktop</option><option value="browser_upload">Browser Upload</option><option value="browser_guard">Browser Guard Presence</option><option value="browser_upload">Browser Upload</option><option value="browser_guard">Browser Guard Presence</option></select></div><div class="field"><label>Severidade</label><select id="policySeverity"><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option><option>LOW</option></select></div><div class="field"><label>Ação</label><select id="policyAction"><option>AUDIT</option><option>ALERT</option><option>BLOCK</option><option>QUARANTINE</option><option>ALLOW</option></select></div><div class="field"><label>Prioridade</label><input id="policyPriority" type="number" value="100"></div></div><button class="btn primary" onclick="createPolicy()">Criar política</button></div></div></div>
+<div id="policyModal" class="modal-bg"><div class="modal"><div class="modal-head"><h3>Nova política</h3><button class="modal-close" onclick="closeModal('policyModal')">×</button></div><div class="modal-body"><div class="form-grid"><div class="field fullcol"><label>Nome</label><input id="policyName" placeholder="Ex.: CNPJ - USB Block"></div><div class="field"><label>Classificação</label><select id="policyClass"><option>CPF</option><option>CNPJ</option><option>CREDIT_CARD</option><option>EMAIL_ADDRESS</option><option>RG_BR</option><option>PHONE_BR</option><option>PIX_KEY</option><option>BANK_ACCOUNT</option><option>PASSPORT</option><option>CREDENTIAL</option><option>SECRET</option><option>BROWSER_GUARD_DISABLED_OR_MISSING</option><option>BROWSER_GUARD_RESTORED</option><option>BROWSER_GUARD_DISABLED_OR_MISSING</option><option>BROWSER_GUARD_RESTORED</option></select></div><div class="field"><label>Canal</label><select id="policyChannel"><option value="filesystem">Filesystem</option><option value="download">Download</option><option value="screenshot">Screenshot</option><option value="removable">USB / Removable</option><option value="messaging">Messaging / WhatsApp Desktop</option><option value="browser_upload">Browser Upload</option><option value="browser_guard">Browser Guard Presence</option><option value="ai_prompt">AI Prompt</option></select></div><div class="field"><label>Severidade</label><select id="policySeverity"><option>MEDIUM</option><option>HIGH</option><option>CRITICAL</option><option>LOW</option></select></div><div class="field"><label>Ação</label><select id="policyAction"><option>AUDIT</option><option>ALERT</option><option>BLOCK</option><option>QUARANTINE</option><option>ALLOW</option></select></div><div class="field"><label>Prioridade</label><input id="policyPriority" type="number" value="100"></div></div><button class="btn primary" onclick="createPolicy()">Criar política</button></div></div></div>
 
 <div id="detectorModal" class="modal-bg"><div class="modal"><div class="modal-head"><h3>Novo detector customizado</h3><button class="modal-close" onclick="closeModal('detectorModal')">×</button></div><div class="modal-body"><div class="form-grid"><div class="field fullcol"><label>Nome</label><input id="detectorName" placeholder="Ex.: Número de contrato interno"></div><div class="field"><label>Classificação</label><input id="detectorClass" placeholder="CONTRACT_ID"></div><div class="field"><label>Status</label><select id="detectorEnabled"><option value="true">Ativo</option><option value="false">Desativado</option></select></div><div class="field fullcol"><label>Regex RE2</label><input id="detectorPattern" class="code" placeholder="CONTRATO-[0-9]{8}"></div><div class="field fullcol"><label>Descrição</label><input id="detectorDescription" placeholder="Identificador de contrato da organização"></div></div><button class="btn primary" onclick="createDetector()">Criar detector</button></div></div></div>
 <div id="toast" class="toast"></div>
@@ -135,6 +228,16 @@
 const API='api/v1'; let setupMode=false; let currentAdmin='admin'; let enrollmentCommand='';
 const LANG_LOCALES={pt:'pt-BR',en:'en-US',es:'es-ES'};
 const I18N={
+  'AI Gateway':{en:'AI Gateway',es:'AI Gateway'},
+  'Prompts inspecionados':{en:'Inspected prompts',es:'Prompts inspeccionados'},
+  'Bloqueados':{en:'Blocked',es:'Bloqueados'},
+  'Alertas':{en:'Alerts',es:'Alertas'},
+  'Providers recentes':{en:'Recent providers',es:'Proveedores recientes'},
+  'Atividade por provider':{en:'Activity by provider',es:'Actividad por proveedor'},
+  'Privacidade do AI Gateway':{en:'AI Gateway privacy',es:'Privacidad del AI Gateway'},
+  'Eventos recentes de AI Prompt':{en:'Recent AI Prompt events',es:'Eventos recientes de AI Prompt'},
+  'Nenhum prompt de IA inspecionado.':{en:'No AI prompts inspected.',es:'Ningún prompt de IA inspeccionado.'},
+
   'Console administrativa do BSC DLP.':{en:'BSC DLP administrative console.',es:'Consola administrativa de BSC DLP.'},'Administrador':{en:'Administrator',es:'Administrador'},'Senha':{en:'Password',es:'Contraseña'},'Confirmar senha':{en:'Confirm password',es:'Confirmar contraseña'},'Entrar':{en:'Sign in',es:'Ingresar'},
   'Somente administradores têm acesso à console. O usuário do endpoint não recebe credenciais de console.':{en:'Only administrators can access the console. Endpoint users do not receive console credentials.',es:'Solo los administradores pueden acceder a la consola. Los usuarios de endpoints no reciben credenciales de la consola.'},
   'VISÃO':{en:'OVERVIEW',es:'VISIÓN'},'Visão geral':{en:'Overview',es:'Visión general'},'Incidentes':{en:'Incidents',es:'Incidentes'},'Endpoints':{en:'Endpoints',es:'Endpoints'},'PROTEÇÃO':{en:'PROTECTION',es:'PROTECCIÓN'},'Políticas':{en:'Policies',es:'Políticas'},'Detectores':{en:'Detectors',es:'Detectores'},'Documentos & OCR':{en:'Documents & OCR',es:'Documentos y OCR'},'Eventos':{en:'Events',es:'Eventos'},'Relatórios':{en:'Reports',es:'Informes'},'SISTEMA':{en:'SYSTEM',es:'SISTEMA'},'Administração':{en:'Administration',es:'Administración'},'Proteção':{en:'Protection',es:'Protección'},'Online':{en:'Online',es:'En línea'},
@@ -186,9 +289,9 @@ function showAuth(setup){$('app').classList.add('hidden');$('authShell').classLi
 function showApp(){$('authShell').classList.add('hidden');$('app').classList.remove('hidden');$('adminName').textContent=currentAdmin;$('settingsAdmin').textContent=currentAdmin;navigate(location.hash.slice(1)||'overview')}
 $('authForm').addEventListener('submit',async e=>{e.preventDefault();$('authError').textContent='';const username=$('authUser').value.trim(),password=$('authPass').value;try{if(setupMode){if(password.length<10)throw new Error(tr('Use uma senha com pelo menos 10 caracteres.'));if(password!==$('authConfirm').value)throw new Error(tr('As senhas não coincidem.'));await api('/auth/setup',{method:'POST',body:JSON.stringify({username,password})})}else{await api('/auth/login',{method:'POST',body:JSON.stringify({username,password})})}currentAdmin=username;showApp();await loadAll()}catch(err){$('authError').textContent=trError(err.message)}})
 async function logout(){try{await api('/auth/logout',{method:'POST'})}catch{}showAuth(false)}
-const titles={overview:'Visão geral',incidents:'Incidentes',endpoints:'Endpoints',policies:'Políticas',detectors:'Detectores',documents:'Documentos & OCR',events:'Eventos',reports:'Relatórios',settings:'Administração'};
+const titles={overview:'Visão geral',incidents:'Incidentes',endpoints:'Endpoints',policies:'Políticas',detectors:'Detectores',documents:'Documentos & OCR',ai_gateway:'AI Gateway',events:'Eventos',reports:'Relatórios',settings:'Administração'};
 let eventPage=1, incidentPage=1, knownClassifiers=[];
-function navigate(view){if(!titles[view])view='overview';document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.view===view));$('pageTitle').textContent=tr(titles[view]);if(location.hash!==`#${view}`)history.replaceState(null,'',`#${view}`);if(view==='events')loadEvents();if(view==='incidents')loadIncidents();if(view==='reports')loadReport();if(view==='detectors')loadDetectors()}
+function navigate(view){if(!titles[view])view='overview';document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===view));document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('active',a.dataset.view===view));$('pageTitle').textContent=tr(titles[view]);if(location.hash!==`#${view}`)history.replaceState(null,'',`#${view}`);if(view==='ai_gateway')loadAIGateway();if(view==='events')loadEvents();if(view==='incidents')loadIncidents();if(view==='reports')loadReport();if(view==='detectors')loadDetectors()}
 document.querySelectorAll('.nav a').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();navigate(a.dataset.view)}));window.addEventListener('hashchange',()=>navigate(location.hash.slice(1)||'overview'));
 function riskBadge(n){n=Number(n||0);return `<span class="badge ${n>=70?'risk-high':n>=40?'risk-med':'risk-low'}">${n}</span>`}function actionBadge(v){v=String(v||'AUDIT').toLowerCase();return `<span class="badge ${v}">${esc(v.toUpperCase())}</span>`}function severityBadge(v){v=String(v||'MEDIUM').toLowerCase();return `<span class="badge ${v}">${esc(v.toUpperCase())}</span>`}function baseName(p){if(!p)return'-';return String(p).split(/[\\/]/).pop()||p}function when(v){if(!v)return'-';try{return new Date(v).toLocaleString(LANG_LOCALES[currentLang])}catch{return v}}
 function qv(id){return $(id)?.value?.trim?.()||''}function setv(id,v=''){if($(id))$(id).value=v}
@@ -208,6 +311,71 @@ async function loadPolicies(){const rows=await api('/policies');$('policyTable')
 async function updatePolicy(id,key,value){await api(`/policies/${id}`,{method:'PATCH',body:JSON.stringify({[key]:value})});toast(tr('Política atualizada'));await loadPolicies()}
 function fillClassifierSelects(){for(const id of ['evtClass','incClass','repClass']){const el=$(id);if(!el)continue;const selected=el.value;el.innerHTML=`<option value="">${tr('Todas classificações')}</option>`+knownClassifiers.map(c=>`<option>${esc(c)}</option>`).join('');el.value=selected}const pol=$('policyClass');if(pol){const selected=pol.value;pol.innerHTML=knownClassifiers.map(c=>`<option>${esc(c)}</option>`).join('');if(knownClassifiers.includes(selected))pol.value=selected}}
 async function loadCapabilities(){const c=await api('/capabilities');const docs=c.documents||[];$('documentGrid').innerHTML=docs.map(d=>`<div class="tile"><h3>${esc(d)}</h3><p>${tr(d==='PDF'?'PDF textual e digitalizado com OCR.':d==='DOCX'||d==='XLSX'||d==='PPTX'?'Conteúdo de documentos Office.':'Conteúdo textual e estruturado.')}</p><div class="tile-meta"><span>${tr('Inspeção local')}</span><span class="badge online">${tr('ATIVO')}</span></div></div>`).join('');knownClassifiers=c.classifiers||[];fillClassifierSelects();$('builtinDetectors').innerHTML=knownClassifiers.map(c=>`<div class="tile"><h3>${esc(c)}</h3><p>${tr('Detector nativo do BSC DLP.')}</p><div class="tile-meta"><span class="badge native-badge">${tr('NATIVO')}</span><span>${tr('Local')}</span></div></div>`).join('')}
+async function loadAIGateway(){
+  const [all,blocked,alerts]=await Promise.all([
+    api('/events/query?channel=ai_prompt&page=1&page_size=100'),
+    api('/events/query?channel=ai_prompt&blocked=true&page=1&page_size=10'),
+    api('/events/query?channel=ai_prompt&action=ALERT&page=1&page_size=10')
+  ]);
+
+  const items=Array.isArray(all.items)?all.items:[];
+
+  $('aiPromptTotal').textContent=Number(all.total||0);
+  $('aiPromptBlocked').textContent=Number(blocked.total||0);
+  $('aiPromptAlerts').textContent=Number(alerts.total||0);
+
+  const providers=['chatgpt','claude','gemini','copilot'];
+
+  const stats=Object.fromEntries(
+    providers.map(p=>[p,{total:0,blocked:0,alerts:0}])
+  );
+
+  for(const e of items){
+    const provider=String(e.destination||'').toLowerCase();
+
+    if(!stats[provider])continue;
+
+    stats[provider].total++;
+
+    if(e.blocked)stats[provider].blocked++;
+
+    if(String(e.action||'').toUpperCase()==='ALERT'){
+      stats[provider].alerts++;
+    }
+  }
+
+  $('aiProviderCount').textContent=
+    providers.filter(p=>stats[p].total>0).length;
+
+  const labels={
+    chatgpt:'ChatGPT',
+    claude:'Claude',
+    gemini:'Gemini',
+    copilot:'Copilot'
+  };
+
+  $('aiProviderTable').innerHTML=providers.map(p=>`
+    <tr>
+      <td><strong>${labels[p]}</strong></td>
+      <td>${stats[p].total}</td>
+      <td>${stats[p].blocked}</td>
+      <td>${stats[p].alerts}</td>
+    </tr>
+  `).join('');
+
+  $('aiEventTable').innerHTML=items.length
+    ? items.slice(0,12).map(e=>`
+      <tr>
+        <td>${esc(when(e.timestamp))}</td>
+        <td>${esc(labels[String(e.destination||'').toLowerCase()]||e.destination||'-')}</td>
+        <td>${esc(e.hostname||e.endpoint_id||'-')}</td>
+        <td>${esc(e.classification||'-')}</td>
+        <td>${actionBadge(e.action)}</td>
+        <td>${riskBadge(e.risk_score)}</td>
+      </tr>
+    `).join('')
+    : `<tr><td colspan="6">${tr('Nenhum prompt de IA inspecionado.')}</td></tr>`;
+}
 async function loadDetectors(){const rows=await api('/detection-rules');for(const r of rows){if(!knownClassifiers.includes(r.classification))knownClassifiers.push(r.classification)}knownClassifiers.sort();fillClassifierSelects();$('detectorTable').innerHTML=rows.length?rows.map(r=>`<tr><td><strong>${esc(r.name)}</strong><br><small style="color:#806778">${esc(r.description||'')}</small></td><td>${esc(r.classification)}</td><td class="code pattern-cell" title="${esc(r.pattern)}">${esc(r.pattern)}</td><td><button class="btn" onclick="toggleDetector(${r.id},${!r.enabled})">${tr(r.enabled?'Ativo':'Desativado')}</button></td><td><button class="btn danger" onclick="deleteDetector(${r.id})">${tr('Excluir')}</button></td></tr>`).join(''):`<tr><td colspan="5">${tr('Nenhuma regra customizada. Os detectores nativos continuam ativos.')}</td></tr>`}
 function openDetectorModal(){$('detectorModal').classList.add('open')}async function createDetector(){try{await api('/detection-rules',{method:'POST',body:JSON.stringify({name:qv('detectorName'),classification:qv('detectorClass'),pattern:qv('detectorPattern'),description:qv('detectorDescription'),enabled:qv('detectorEnabled')!=='false'})});closeModal('detectorModal');['detectorName','detectorClass','detectorPattern','detectorDescription'].forEach(id=>setv(id));toast(tr('Detector criado e será distribuído aos agentes'));await loadDetectors();await loadCapabilities()}catch(e){toast(e.message)}}async function toggleDetector(id,enabled){await api(`/detection-rules/${id}`,{method:'PATCH',body:JSON.stringify({enabled})});await loadDetectors()}async function deleteDetector(id){if(!confirm(tr('Excluir esta regra customizada?')))return;await api(`/detection-rules/${id}`,{method:'DELETE'});toast(tr('Detector excluído'));await loadDetectors()}
 async function loadReport(){const d=await api('/reports/summary?'+reportQS().toString());const m=d.metrics;$('repEvents').textContent=m.events;$('repIncidents').textContent=m.incidents;$('repBlockedCount').textContent=m.blocked;$('repRiskMax').textContent=m.max_risk;$('reportClasses').innerHTML=Object.entries(m.by_classification||{}).slice(0,10).map(([k,v])=>`<div class="mini-row"><strong>${esc(k)}</strong><span>${v}</span></div>`).join('')||`<div class="empty">${tr('Sem dados no período.')}</div>`;$('reportChannels').innerHTML=Object.entries(m.by_channel||{}).map(([k,v])=>`<div class="mini-row"><strong>${esc(k)}</strong><span>${v}</span></div>`).join('')||`<div class="empty">${tr('Sem dados no período.')}</div>`}
