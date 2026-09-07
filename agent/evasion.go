@@ -344,7 +344,7 @@ func detectEvasiveIdentifiers(text string) []Detection {
 				}
 			}
 
-			if !foundEmbedded && (len(value) == 10 || len(value) == 12 || (len(value) == 11 && !validCPF(value))) {
+			if !foundEmbedded && (len(value) == 10 || len(value) == 12) {
 				evidence := runEvidence("cpf_context+malformed_identifier", run)
 				addUniqueDetection(&out, seen, "CPF_LIKE", value, evidence)
 			}
@@ -362,7 +362,7 @@ func detectEvasiveIdentifiers(text string) []Detection {
 				continue
 			}
 		}
-		if len(value) == 10 || len(value) == 12 || (len(value) == 11 && !validCPF(value)) {
+		if len(value) == 10 || len(value) == 12 {
 			addUniqueDetection(&out, seen, "CPF_LIKE", value, "cpf_context+number_words+malformed_identifier+evasive_obfuscation")
 		}
 	}

@@ -653,172 +653,210 @@
     }
   }, true);
 
-  // Existing WhatsApp Web outgoing text guard remains active, but only there.
-  if (false && location.hostname.toLowerCase() === WHATSAPP_HOST) {
+  // WhatsApp Web outgoing text guard.
+  // Normal clipboard/editing shortcuts are never intercepted.
+  if (location.hostname.toLowerCase() === WHATSAPP_HOST) {
+
     function isComposer(node) {
       if (!(node instanceof Element)) return false;
+
       const editable = node.closest('[contenteditable="true"]');
       if (!editable) return false;
-      return Boolean(editable.closest("footer")) || editable.getAttribute("role") === "textbox";
+
+      return Boolean(editable.closest("footer")) ||
+             editable.getAttribute("role") === "textbox";
     }
 
     function composer() {
-      return document.querySelector('footer [contenteditable="true"][role="textbox"]') ||
-             document.querySelector('footer [contenteditable="true"]') ||
-             document.querySelector('[contenteditable="true"][role="textbox"]');
+      return document.querySelector(
+        'footer [contenteditable="true"][role="textbox"]'
+      ) ||
+      document.querySelector(
+        'footer [contenteditable="true"]'
+      ) ||
+      document.querySelector(
+        '[contenteditable="true"][role="textbox"]'
+      );
     }
 
     function composerText() {
-      const c = composer();
-      return c ? (c.innerText || c.textContent || "").trim() : "";
+      const node = composer();
+
+      return node
+        ? String(node.innerText || node.textContent || "").trim()
+        : "";
     }
 
     function sendButton() {
-      return document.querySelector('button [data-icon="send"]')?.closest("button") ||
-             document.querySelector('[data-testid="compose-btn-send"]')?.closest("button") ||
-             document.querySelector('button[aria-label="Send"]');
+      return (
+        document.querySelector(
+          'button [data-icon="send"]'
+        )?.closest("button") ||
+
+        document.querySelector(
+          '[data-testid="compose-btn-send"]'
+        )?.closest("button") ||
+
+        document.querySelector(
+          'button[aria-label="Send"]'
+        ) ||
+
+        document.querySelector(
+          'button[aria-label="Enviar"]'
+        )
+      );
     }
 
-    function inspectText(text, eventType) {
-      return runtimeMessage({
+    async function inspectWhatsAppText(text, eventType) {
+      const result = await runtimeMessage({
         type: "bsc_dlp_inspect",
-        destination: textDestination(),
+        destination: "whatsapp_web",
         page_url: pageURL(),
         event_type: eventType,
+        channel: "messaging",
         text
-      }).then(result => {
-        if (!result.ok) {
-          return {
-            available: false,
-            block: false,
-            action: "ALLOW",
-            classifications: []
-          };
-        }
-
-        const data = result.data || {};
-
-        return {
-          available: true,
-          block: Boolean(data.block),
-          action: String(data.action || "ALLOW"),
-          classifications: Array.isArray(data.classifications)
-            ? data.classifications
-            : []
-        };
       });
-    }
 
-    function insertText(target, text) {
-      target.focus();
-      try {
-        if (document.execCommand("insertText", false, text)) return true;
-      } catch {}
-
-      const selection = window.getSelection();
-      if (!selection) return false;
-
-      let range;
-      if (selection.rangeCount) {
-        range = selection.getRangeAt(0);
-      } else {
-        range = document.createRange();
-        range.selectNodeContents(target);
-        range.collapse(false);
+      if (!result.ok) {
+        return {
+          available: false,
+          block: false,
+          action: "ALLOW",
+          classifications: [],
+          reason: result.error || "bridge_unavailable"
+        };
       }
 
-      range.deleteContents();
-      const node = document.createTextNode(text);
-      range.insertNode(node);
-      range.setStartAfter(node);
-      range.collapse(true);
-      selection.removeAllRanges();
-      selection.addRange(range);
+      const data = result.data || {};
 
-      target.dispatchEvent(new InputEvent("input", {
-        bubbles: true,
-        inputType: "insertText",
-        data: text
-      }));
+      return {
+        available: true,
+        block: Boolean(data.block),
+        action: String(data.action || "ALLOW").toUpperCase(),
+        classifications: Array.isArray(data.classifications)
+          ? data.classifications
+          : [],
+        reason: String(data.reason || "")
+      };
+    }
+
+    function replayWhatsAppSend(button) {
+      if (!(button instanceof HTMLElement)) return false;
+
+      bypassSendOnce = true;
+      button.click();
+
       return true;
     }
 
-    document.addEventListener("paste", async event => {
-      if (!isComposer(event.target)) return;
-      if (event.clipboardData?.files?.length) return;
+    async function guardWhatsAppSend(eventType, button) {
+      const text = composerText();
 
-      const text = event.clipboardData?.getData("text/plain") || "";
-      if (!text.trim()) return;
+      if (!text) {
+        return;
+      }
 
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
-      const target = event.target.closest('[contenteditable="true"]') || event.target;
-      const result = await inspectText(text, "paste");
+      const result = await inspectWhatsAppText(
+        text,
+        eventType
+      );
 
       if (!result.available) {
-        insertText(target, text);
-        toast("BSC DLP: agente local indisponÃ­vel; conteÃºdo liberado (fail-open).");
+        replayWhatsAppSend(button);
+
+        toast(
+          "BSC DLP: agente local indisponível; envio no WhatsApp liberado (fail-open)."
+        );
+
         return;
       }
 
       if (result.block) {
-        toast(`BSC DLP bloqueou conteÃºdo sensÃ­vel no WhatsApp Web${classificationLabel(result.classifications)}.`, true);
+        toast(
+          `BSC DLP bloqueou o envio no WhatsApp Web${classificationLabel(result.classifications)}.`,
+          true
+        );
+
         return;
       }
 
-      insertText(target, text);
+      replayWhatsAppSend(button);
+
       if (result.action === "ALERT") {
-        toast(`BSC DLP registrou conteÃºdo sensÃ­vel no WhatsApp Web${classificationLabel(result.classifications)}.`);
+        toast(
+          `BSC DLP registrou conteúdo sensível no WhatsApp Web${classificationLabel(result.classifications)}.`
+        );
       }
-    }, true);
+    }
+
+    // -------------------------------------------------------
+    // ENTER
+    //
+    // IMPORTANTE:
+    // Ctrl / Alt / Meta / Shift jamais sao bloqueados aqui.
+    // -------------------------------------------------------
 
     document.addEventListener("keydown", async event => {
-      if (event.key !== "Enter" || event.shiftKey || event.ctrlKey || event.altKey || event.metaKey) return;
-      if (!isComposer(event.target)) return;
+
+      if (event.key !== "Enter") return;
+
+      if (
+        event.shiftKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.metaKey ||
+        event.isComposing
+      ) {
+        return;
+      }
+
+      if (!isComposer(event.target)) {
+        return;
+      }
 
       const text = composerText();
       if (!text) return;
 
+      const button = sendButton();
+
+      // Se nao conseguimos identificar com seguranca o botao,
+      // deixamos o WhatsApp funcionar normalmente.
+      if (!button) {
+        return;
+      }
+
       event.preventDefault();
       event.stopImmediatePropagation();
 
-      const result = await inspectText(text, "send_enter");
+      await guardWhatsAppSend(
+        "send_enter",
+        button
+      );
 
-      if (!result.available) {
-        const button = sendButton();
-        if (button) {
-          bypassSendOnce = true;
-          button.click();
-        }
-        toast("BSC DLP: agente local indisponÃ­vel; envio liberado (fail-open).");
-        return;
-      }
-
-      if (result.block) {
-        toast(`BSC DLP bloqueou o envio no WhatsApp Web${classificationLabel(result.classifications)}.`, true);
-        return;
-      }
-
-      const button = sendButton();
-      if (button) {
-        bypassSendOnce = true;
-        button.click();
-      }
-
-      if (result.action === "ALERT") {
-        toast(`BSC DLP registrou conteÃºdo sensÃ­vel no WhatsApp Web${classificationLabel(result.classifications)}.`);
-      }
     }, true);
 
+    // -------------------------------------------------------
+    // CLICK NO SEND
+    // -------------------------------------------------------
+
     document.addEventListener("click", async event => {
-      const button = event.target instanceof Element ? event.target.closest("button") : null;
+
+      const button =
+        event.target instanceof Element
+          ? event.target.closest("button")
+          : null;
+
       if (!button) return;
 
       const isSend =
-        Boolean(button.querySelector('[data-icon="send"]')) ||
-        button.matches('[data-testid="compose-btn-send"]') ||
-        button.getAttribute("aria-label") === "Send";
+        Boolean(
+          button.querySelector('[data-icon="send"]')
+        ) ||
+        button.matches(
+          '[data-testid="compose-btn-send"]'
+        ) ||
+        button.getAttribute("aria-label") === "Send" ||
+        button.getAttribute("aria-label") === "Enviar";
 
       if (!isSend) return;
 
@@ -833,29 +871,312 @@
       event.preventDefault();
       event.stopImmediatePropagation();
 
-      const result = await inspectText(text, "send_click");
+      await guardWhatsAppSend(
+        "send_click",
+        button
+      );
+
+    }, true);
+  }
+
+  // ==========================================================
+  // BSC_EMAIL_WEB_GUARD
+  // Gmail + Outlook Web outgoing message inspection
+  // ==========================================================
+
+  const EMAIL_SITES = [
+    {
+      hosts: ["mail.google.com"],
+      provider: "gmail",
+      destination: "gmail"
+    },
+    {
+      hosts: [
+        "outlook.office.com",
+        "outlook.office365.com",
+        "outlook.live.com"
+      ],
+      provider: "outlook",
+      destination: "outlook_web"
+    }
+  ];
+
+  function emailSiteForHost(hostname = location.hostname) {
+    const host = String(hostname || "").toLowerCase();
+
+    for (const site of EMAIL_SITES) {
+      if (site.hosts.some(item => host === item || host.endsWith(`.${item}`))) {
+        return site;
+      }
+    }
+
+    return null;
+  }
+
+  const emailSite = emailSiteForHost();
+  const emailReplayBypass = new WeakSet();
+  let emailInspectionPending = false;
+
+  function visibleEmailElement(node) {
+    if (!(node instanceof Element)) return false;
+
+    const rect = node.getBoundingClientRect();
+
+    return rect.width > 0 &&
+      rect.height > 0 &&
+      getComputedStyle(node).visibility !== "hidden";
+  }
+
+  function gmailSendButtonFromTarget(target) {
+    if (!(target instanceof Element)) return null;
+
+    const candidate = target.closest(
+      '[role="button"][data-tooltip^="Send"],' +
+      '[role="button"][data-tooltip^="Enviar"],' +
+      '[role="button"][aria-label^="Send"],' +
+      '[role="button"][aria-label^="Enviar"]'
+    );
+
+    return candidate && visibleEmailElement(candidate)
+      ? candidate
+      : null;
+  }
+
+  function outlookSendButtonFromTarget(target) {
+    if (!(target instanceof Element)) return null;
+
+    const candidate = target.closest(
+      'button[aria-label^="Send"],' +
+      'button[aria-label^="Enviar"],' +
+      '[role="button"][aria-label^="Send"],' +
+      '[role="button"][aria-label^="Enviar"],' +
+      'button[title^="Send"],' +
+      'button[title^="Enviar"]'
+    );
+
+    return candidate && visibleEmailElement(candidate)
+      ? candidate
+      : null;
+  }
+
+  function emailSendButtonFromTarget(target) {
+    if (!emailSite) return null;
+
+    if (emailSite.provider === "gmail") {
+      return gmailSendButtonFromTarget(target);
+    }
+
+    if (emailSite.provider === "outlook") {
+      return outlookSendButtonFromTarget(target);
+    }
+
+    return null;
+  }
+
+  function gmailComposeRoot(sendButton) {
+    return sendButton?.closest('[role="dialog"]') ||
+      sendButton?.closest('div[aria-label*="Message" i]') ||
+      document;
+  }
+
+  function outlookComposeRoot(sendButton) {
+    return sendButton?.closest('[role="dialog"]') ||
+      sendButton?.closest('[data-app-section]') ||
+      document;
+  }
+
+  function firstVisibleIn(root, selectors) {
+    for (const selector of selectors) {
+      const nodes = root.querySelectorAll(selector);
+
+      for (const node of nodes) {
+        if (visibleEmailElement(node)) {
+          return node;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  function gmailMessageText(sendButton) {
+    const root = gmailComposeRoot(sendButton);
+
+    const subject = firstVisibleIn(root, [
+      'input[name="subjectbox"]',
+      'input[placeholder*="Subject" i]',
+      'input[aria-label*="Subject" i]',
+      'input[placeholder*="Assunto" i]',
+      'input[aria-label*="Assunto" i]'
+    ]);
+
+    const body = firstVisibleIn(root, [
+      '[aria-label="Message Body"][contenteditable="true"]',
+      '[aria-label*="Message Body" i][contenteditable="true"]',
+      '[aria-label*="Corpo" i][contenteditable="true"]',
+      '[role="textbox"][contenteditable="true"]'
+    ]);
+
+    const subjectText = subject instanceof HTMLInputElement
+      ? String(subject.value || "").trim()
+      : "";
+
+    const bodyText = composerValue(body);
+
+    return [subjectText, bodyText]
+      .filter(Boolean)
+      .join("\n\n");
+  }
+
+  function outlookMessageText(sendButton) {
+    const root = outlookComposeRoot(sendButton);
+
+    const subject = firstVisibleIn(root, [
+      'input[placeholder*="Add a subject" i]',
+      'input[aria-label*="subject" i]',
+      'input[placeholder*="assunto" i]',
+      'input[aria-label*="assunto" i]'
+    ]);
+
+    const body = firstVisibleIn(root, [
+      '[aria-label*="Message body" i][contenteditable="true"]',
+      '[aria-label*="Corpo da mensagem" i][contenteditable="true"]',
+      '[role="textbox"][contenteditable="true"]'
+    ]);
+
+    const subjectText = subject instanceof HTMLInputElement
+      ? String(subject.value || "").trim()
+      : "";
+
+    const bodyText = composerValue(body);
+
+    return [subjectText, bodyText]
+      .filter(Boolean)
+      .join("\n\n");
+  }
+
+  function emailMessageText(sendButton) {
+    if (!emailSite) return "";
+
+    if (emailSite.provider === "gmail") {
+      return gmailMessageText(sendButton);
+    }
+
+    if (emailSite.provider === "outlook") {
+      return outlookMessageText(sendButton);
+    }
+
+    return "";
+  }
+
+  async function inspectEmailMessage(text, eventType) {
+    const result = await runtimeMessage({
+      type: "bsc_dlp_inspect",
+      destination: emailSite?.destination || "webmail",
+      page_url: pageURL(),
+      event_type: eventType,
+      channel: "email",
+      text
+    });
+
+    if (!result.ok) {
+      return {
+        available: false,
+        block: false,
+        action: "ALLOW",
+        classifications: [],
+        reason: result.error || "bridge_unavailable"
+      };
+    }
+
+    const data = result.data || {};
+
+    return {
+      available: true,
+      block: Boolean(data.block),
+      action: String(data.action || "ALLOW").toUpperCase(),
+      classifications: Array.isArray(data.classifications)
+        ? data.classifications
+        : [],
+      reason: String(data.reason || "")
+    };
+  }
+
+  function replayEmailSend(sendButton) {
+    if (!(sendButton instanceof Element)) return;
+
+    emailReplayBypass.add(sendButton);
+    sendButton.click();
+  }
+
+  async function guardEmailSend(sendButton) {
+    if (emailInspectionPending) return;
+
+    const text = emailMessageText(sendButton);
+
+    if (!text) {
+      replayEmailSend(sendButton);
+      return;
+    }
+
+    emailInspectionPending = true;
+
+    try {
+      const result = await inspectEmailMessage(
+        text,
+        "email_send_click"
+      );
 
       if (!result.available) {
-        bypassSendOnce = true;
-        button.click();
-        toast("BSC DLP: agente local indisponÃ­vel; envio liberado (fail-open).");
+        toast(
+          "BSC DLP Email Guard: agente local indisponivel; envio liberado (fail-open)."
+        );
+
+        replayEmailSend(sendButton);
         return;
       }
 
       if (result.block) {
-        toast(`BSC DLP bloqueou o envio no WhatsApp Web${classificationLabel(result.classifications)}.`, true);
+        toast(
+          `BSC DLP bloqueou o envio do email${classificationLabel(result.classifications)}.`,
+          true
+        );
         return;
       }
 
-      bypassSendOnce = true;
-      button.click();
-
       if (result.action === "ALERT") {
-        toast(`BSC DLP registrou conteÃºdo sensÃ­vel no WhatsApp Web${classificationLabel(result.classifications)}.`);
+        toast(
+          `BSC DLP detectou conteudo sensivel no email${classificationLabel(result.classifications)}.`
+        );
       }
-    }, true);
+
+      replayEmailSend(sendButton);
+    } finally {
+      emailInspectionPending = false;
+    }
   }
 
+  if (emailSite) {
+    document.addEventListener("click", async event => {
+      const sendButton = emailSendButtonFromTarget(event.target);
+
+      if (!sendButton) return;
+
+      if (emailReplayBypass.has(sendButton)) {
+        emailReplayBypass.delete(sendButton);
+        return;
+      }
+
+      const text = emailMessageText(sendButton);
+
+      if (!text) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+
+      await guardEmailSend(sendButton);
+    }, true);
+  }
   console.info(`[BSC DLP] Browser Guard v0.6.7 active: generic upload DLP on ${uploadDestination()}`);
 
   // ==========================================================

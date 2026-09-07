@@ -117,10 +117,15 @@ func normalizeBrowserDestination(value string) string {
 
 func normalizeBrowserInspectChannel(value string) string {
 	value = strings.ToLower(strings.TrimSpace(value))
-	if value == "ai_prompt" {
+
+	switch value {
+	case "ai_prompt":
 		return "ai_prompt"
+	case "email":
+		return "email"
+	default:
+		return "messaging"
 	}
-	return "messaging"
 }
 
 func normalizeBrowserUploadDestination(value string) string {
@@ -296,7 +301,7 @@ func browserDecision(
 	}
 
 	objectContext := buildObjectContext(objectName, channel, detections)
-	if channel == "browser_upload" || channel == "ai_prompt" {
+	if channel == "browser_upload" || channel == "ai_prompt" || channel == "email" {
 		objectContext.DestinationTrust = "external"
 	}
 
@@ -374,9 +379,12 @@ func browserDecision(
 			evidence += "+context:" + strings.Join(objectContext.ContextTags, ",")
 		}
 		if blocked {
-			if channel == "ai_prompt" {
+			switch channel {
+			case "ai_prompt":
 				evidence += "+browser_pre_prompt_block"
-			} else {
+			case "email":
+				evidence += "+browser_pre_email_block"
+			default:
 				evidence += "+browser_pre_upload_block"
 			}
 		}
@@ -387,6 +395,8 @@ func browserDecision(
 			objectPath += "/upload/" + filepath.Base(objectName)
 		case "ai_prompt":
 			objectPath += "/prompt"
+		case "email":
+			objectPath += "/email"
 		default:
 			objectPath += "/composer"
 		}
@@ -600,10 +610,15 @@ func startBrowserBridge(api, endpointID, hostname, username string) {
 		inspection := "browser_outgoing_text"
 		docType := "browser_text"
 
-		if body.Channel == "ai_prompt" {
+		switch body.Channel {
+		case "ai_prompt":
 			objectName = "ai-prompt.txt"
 			inspection = "browser_ai_prompt"
 			docType = "ai_prompt"
+		case "email":
+			objectName = "email-body.txt"
+			inspection = "browser_email_body"
+			docType = "email"
 		}
 
 		response := browserDecision(

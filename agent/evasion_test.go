@@ -70,6 +70,25 @@ func TestEvasionMalformedCPFWithContext(t *testing.T) {
 	}
 }
 
+func TestInvalidCPFChecksumIsIgnored(t *testing.T) {
+	got := detectSensitive("CPF: 123.456.789-00")
+
+	if findDetection(got, "CPF") != nil {
+		t.Fatalf("invalid CPF checksum must not become CPF: %#v", got)
+	}
+
+	if findDetection(got, "CPF_LIKE") != nil {
+		t.Fatalf("11-digit invalid CPF checksum must be ignored: %#v", got)
+	}
+}
+
+func TestInvalidCardLuhnIsIgnored(t *testing.T) {
+	got := detectSensitive("Cartão: 4111 1111 1111 1112")
+
+	if findDetection(got, "CREDIT_CARD") != nil {
+		t.Fatalf("invalid Luhn card must be ignored: %#v", got)
+	}
+}
 func TestEvasionCNPJAndCard(t *testing.T) {
 	cnpj := detectSensitive("CNPJ: 11 # 222 # 333 # 0001 # 81")
 	if findDetection(cnpj, "CNPJ") == nil {
